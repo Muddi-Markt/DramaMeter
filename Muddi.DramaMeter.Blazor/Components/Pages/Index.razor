@@ -54,7 +54,7 @@
     private bool _hasVoted;
     private TimeSpan? _cooldownRemaining;
     private double _dramaLevel;
-    private List<(double X, double Y)> _lastVotePositions = [];
+    private List<UserPoint> _lastVotePositions = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,7 +76,7 @@
     {
         try
         {
-            await VoteService.SubmitVoteAsync(args.level, args.angle, args.viewBoxX, args.viewBoxY);
+            await VoteService.SubmitVoteAsync(args.level, args.viewBoxX, args.viewBoxY);
         }
         catch (InvalidOperationException)
         {

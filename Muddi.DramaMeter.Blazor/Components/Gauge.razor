@@ -1,5 +1,3 @@
-@using Muddi.DramaMeter.Blazor.Services
-@using Muddi.DramaMeter.Blazor.Models
 @inject IJSRuntime JS
 
 <svg @ref="_svgRef" viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge"
@@ -24,7 +22,7 @@
                   stroke="white" stroke-width="3" stroke-linecap="round"/>
             <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
         </g>
-        
+
         @* Last 10 vote dots — rendered directly inside this SVG *@
         @if (LastVotePositions is not null && LastVotePositions.Any())
         {
@@ -43,7 +41,7 @@
                   class="gauge-label">@Labels[i]</text></text>
     }
 
-    
+
 </svg>
 
 @code {
@@ -67,7 +65,7 @@
     [Parameter] public DramaResult? Result { get; set; }
     [Parameter] public bool ShowNeedle { get; set; }
     [Parameter] public double DramaLevel { get; set; } = 0;
-    [Parameter] public List<(double X, double Y)>? LastVotePositions { get; set; }
+    [EditorRequired] [Parameter] public required List<UserPoint> LastVotePositions { get; set; }
 
     /// <summary>
     /// Fired when the user clicks on the gauge.
@@ -113,9 +111,6 @@
 
         var svgX = cssX * _scaleX;
         var svgY = cssY * _scaleY;
-
-        if (svgY > 182)
-            return;
 
         // Calculate angle from center: 180°=left, 90°=top, 0°=right
         var dx = svgX - Cx;

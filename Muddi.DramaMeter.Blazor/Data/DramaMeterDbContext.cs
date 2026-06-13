@@ -5,33 +5,24 @@ namespace Muddi.DramaMeter.Blazor.Data;
 
 public class DramaMeterDbContext(DbContextOptions<DramaMeterDbContext> options) : DbContext(options)
 {
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Vote> Votes => Set<Vote>();
+	public DbSet<User> Users => Set<User>();
+	public DbSet<Vote> Votes => Set<Vote>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
+	protected override void OnModelCreating(ModelBuilder modelBuilder)
+	{
+		base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Id);
-            entity.Property(e => e.CreatedAt).HasColumnType("timestamptz");
-        });
+		modelBuilder.Entity<User>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+			entity.HasIndex(e => e.Id);
+			entity.Property(e => e.CreatedAt).HasColumnType("timestamptz");
+		});
 
-        modelBuilder.Entity<Vote>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
-            entity.HasIndex(e => e.CreatedAt);
-
-            entity.Property(e => e.Level).HasConversion<int>();
-            entity.Property(e => e.CreatedAt).HasColumnType("timestamptz");
-
-            entity.HasOne<User>(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-    }
+		modelBuilder.Entity<Vote>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+			entity.HasIndex(e => e.CreatedAt);
+		});
+	}
 }

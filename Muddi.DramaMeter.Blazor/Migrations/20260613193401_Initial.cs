@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Muddi.DramaMeter.Blazor.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,7 +32,9 @@ namespace Muddi.DramaMeter.Blazor.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Level = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                    ClickViewBoxX = table.Column<double>(type: "double precision", nullable: false),
+                    ClickViewBoxY = table.Column<double>(type: "double precision", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -56,9 +58,9 @@ namespace Muddi.DramaMeter.Blazor.Migrations
                 column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Votes_UserId_CreatedAt",
+                name: "IX_Votes_UserId",
                 table: "Votes",
-                columns: new[] { "UserId", "CreatedAt" });
+                column: "UserId");
         }
 
         /// <inheritdoc />

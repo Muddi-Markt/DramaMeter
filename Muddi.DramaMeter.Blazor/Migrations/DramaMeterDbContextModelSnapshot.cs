@@ -35,7 +35,7 @@ namespace Muddi.DramaMeter.Blazor.Migrations
 
                     b.HasIndex("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Muddi.DramaMeter.Blazor.Models.Vote", b =>
@@ -46,20 +46,17 @@ namespace Muddi.DramaMeter.Blazor.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz");
+                    b.Property<double>("ClickViewBoxX")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("ClickViewBoxY")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Level")
                         .HasColumnType("integer");
-
-                    b.Property<double?>("ClickAngle")
-                        .HasColumnType("double precision");
-
-                    b.Property<double?>("ClickViewBoxX")
-                        .HasColumnType("double precision");
-
-                    b.Property<double?>("ClickViewBoxY")
-                        .HasColumnType("double precision");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -68,9 +65,9 @@ namespace Muddi.DramaMeter.Blazor.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.HasIndex("UserId", "CreatedAt");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Votes", (string)null);
+                    b.ToTable("Votes");
                 });
 
             modelBuilder.Entity("Muddi.DramaMeter.Blazor.Models.Vote", b =>

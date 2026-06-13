@@ -1,11 +1,11 @@
-@if (Positions is not null && Positions.Any())
+
+@foreach (var pos in Positions)
 {
-    @foreach (var pos in Positions)
-    {
-        <circle class="vote-dot" cx="@pos.X" cy="@pos.Y" r="4" />
-    }
+    <circle class="vote-dot" cx="@pos.X" cy="@pos.Y" r="4"/>
 }
 
+
 @code {
-    [Parameter] public List<(double X, double Y)>? Positions { get; set; }
+    [EditorRequired] [Parameter] public required List<UserPoint> Positions { get; set; }
+
 }

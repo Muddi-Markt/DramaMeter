@@ -8,12 +8,11 @@ public class VoteTests
     public void Vote_CreatedWithDefaults_SetsDefaults()
     {
         var user = new User();
-        var vote = new Vote { UserId = user.Id };
+        var vote = new Vote();
 
-        vote.UserId.Should().Be(user.Id);
-        vote.Level.Should().Be(0); // default int is 0 = No Drama
-        vote.CreatedAt.Should().BeBefore(DateTime.UtcNow.AddMilliseconds(1));
         vote.User.Should().BeNull(); // FK navigation not set by default
+        vote.Level.Should().Be(0); // default int is 0 = No Drama
+        vote.CreatedAt.Should().BeBefore(DateTimeOffset.UtcNow.AddMilliseconds(1));
     }
 
     [Theory]
@@ -24,7 +23,7 @@ public class VoteTests
     public void Vote_CreatedWithValidLevel_SetsLevelCorrectly(int level)
     {
         var user = new User();
-        var vote = new Vote { UserId = user.Id, Level = level };
+        var vote = new Vote { User = user, Level = level };
 
         vote.Level.Should().Be(level);
     }
@@ -33,7 +32,7 @@ public class VoteTests
     public void Vote_UserRelation_CanNavigate()
     {
         var user = new User();
-        var vote = new Vote { UserId = user.Id, User = user };
+        var vote = new Vote { User = user };
 
         vote.User.Should().Be(user);
     }

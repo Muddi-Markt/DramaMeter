@@ -36,13 +36,13 @@ public class DramaMeterDbContextTests
 		ctx.Users.Add(user);
 		ctx.SaveChanges();
 
-		var vote = new Vote { UserId = user.Id, Level = 2 };
+		var vote = new Vote { User = user, Level = 2 };
 		ctx.Votes.Add(vote);
 		ctx.SaveChanges();
 
 		var retrieved = await ctx.Votes.FirstOrDefaultAsync(v => v.Id == vote.Id);
 		retrieved.Should().NotBeNull();
-		retrieved!.UserId.Should().Be(user.Id);
+		retrieved!.User!.Id.Should().Be(user.Id);
 		retrieved.Level.Should().Be(2);
 	}
 
@@ -56,12 +56,12 @@ public class DramaMeterDbContextTests
 
 		for (int i = 0; i < 5; i++)
 		{
-			ctx.Votes.Add(new Vote { UserId = user.Id, Level = i % 4 });
+			ctx.Votes.Add(new Vote { User = user, Level = i % 4 });
 		}
 
 		ctx.SaveChanges();
 
-		var userVotes = await ctx.Votes.Where(v => v.UserId == user.Id).ToListAsync();
+		var userVotes = await ctx.Votes.Where(v => v.User!.Id == user.Id).ToListAsync();
 		userVotes.Count.Should().Be(5);
 	}
 
@@ -73,14 +73,14 @@ public class DramaMeterDbContextTests
 		ctx.Users.Add(user);
 		ctx.SaveChanges();
 
-		var vote1 = new Vote { UserId = user.Id, Level = 1 };
-		var vote2 = new Vote { UserId = user.Id, Level = 3 };
+		var vote1 = new Vote { User = user, Level = 1 };
+		var vote2 = new Vote { User = user, Level = 3 };
 		ctx.Votes.Add(vote1);
 		ctx.Votes.Add(vote2);
 		ctx.SaveChanges();
 
 		var votes = await ctx.Votes
-			.Where(v => v.UserId == user.Id)
+			.Where(v => v.User!.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
 			.ToListAsync();
 
@@ -95,7 +95,7 @@ public class DramaMeterDbContextTests
 		ctx.Users.Add(user);
 		ctx.SaveChanges();
 
-		var vote = new Vote { UserId = user.Id, Level = 1 };
+		var vote = new Vote { User = user, Level = 1 };
 		ctx.Votes.Add(vote);
 		ctx.SaveChanges();
 
@@ -115,8 +115,10 @@ public class DramaMeterDbContextTests
 		ctx.Users.Add(user2);
 		ctx.SaveChanges();
 
-		ctx.Votes.Add(new Vote { UserId = user1.Id, Level = 0 });
-		ctx.Votes.Add(new Vote { UserId = user2.Id, Level = 3 });
+		var vote1 = new Vote { User = user1, Level = 0 };
+		var vote2 = new Vote { User = user2, Level = 3 };
+		ctx.Votes.Add(vote1);
+		ctx.Votes.Add(vote2);
 		ctx.SaveChanges();
 
 		(await ctx.Users.CountAsync()).Should().Be(2);
@@ -134,9 +136,9 @@ public class DramaMeterDbContextTests
 		var now = DateTime.UtcNow;
 		var votes = new[]
 		{
-			new Vote { UserId = user.Id, Level = 3, CreatedAt = now.AddHours(-1) },
-			new Vote { UserId = user.Id, Level = 0, CreatedAt = now.AddHours(-2) },
-			new Vote { UserId = user.Id, Level = 1, CreatedAt = now.AddHours(-3) }
+			new Vote { User = user, Level = 3, CreatedAt = now.AddHours(-1) },
+			new Vote { User = user, Level = 0, CreatedAt = now.AddHours(-2) },
+			new Vote { User = user, Level = 1, CreatedAt = now.AddHours(-3) }
 		};
 		ctx.Votes.AddRange(votes);
 		ctx.SaveChanges();

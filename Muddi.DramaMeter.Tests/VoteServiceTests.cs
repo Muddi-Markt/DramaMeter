@@ -44,12 +44,12 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(2, 90, 220, 50);
+        await service.SubmitVoteAsync(2, 220, 50);
 
         // Assert
         var vote = await db.Votes.FirstOrDefaultAsync();
         vote.Should().NotBeNull();
-        vote!.UserId.Should().Be(user.Id);
+        vote!.User!.Id.Should().Be(user.Id);
         vote.Level.Should().Be(2);
         vote.ClickViewBoxX.Should().Be(220);
         vote.ClickViewBoxY.Should().Be(50);
@@ -68,7 +68,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(level, 90, 220, 50);
+        await service.SubmitVoteAsync(level, 220, 50);
 
         // Assert
         var vote = await db.Votes.FirstAsync();
@@ -84,9 +84,9 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act & Assert
-        await FluentActions.Awaiting(() => service.SubmitVoteAsync(4, 90, 220, 50))
+        await FluentActions.Awaiting(() => service.SubmitVoteAsync(4, 220, 50))
             .Should().ThrowAsync<ArgumentOutOfRangeException>();
-        await FluentActions.Awaiting(() => service.SubmitVoteAsync(-1, 90, 220, 50))
+        await FluentActions.Awaiting(() => service.SubmitVoteAsync(-1, 220, 50))
             .Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
@@ -98,14 +98,14 @@ public class VoteServiceTests
         var user = CreateAndSaveUser(db);
 
         // Create a recent vote (within cooldown period)
-        var recentVote = new Vote { UserId = user.Id, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
+        var recentVote = new Vote { User = user, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
         db.Votes.Add(recentVote);
         await db.SaveChangesAsync();
 
         var service = CreateService(db, user);
 
         // Act & Assert
-        var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(0, 90, 220, 50))
+        var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(0, 220, 50))
             .Should().ThrowAsync<InvalidOperationException>();
         ex.Which.Message.Should().Contain("10");
     }
@@ -118,14 +118,14 @@ public class VoteServiceTests
         var user = CreateAndSaveUser(db);
 
         // Create an old vote (outside cooldown period)
-        var oldVote = new Vote { UserId = user.Id, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-15) };
+        var oldVote = new Vote { User = user, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-15) };
         db.Votes.Add(oldVote);
         await db.SaveChangesAsync();
 
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(3, 90, 220, 50);
+        await service.SubmitVoteAsync(3, 220, 50);
 
         // Assert
         var votes = await db.Votes.ToListAsync();
@@ -143,11 +143,11 @@ public class VoteServiceTests
         var service = new VoteService(db, sessionService);
 
         // Act
-        await service.SubmitVoteAsync(1, 90, 220, 50);
+        await service.SubmitVoteAsync(1, 220, 50);
 
         // Assert — vote must be attributed to the session user, not the first user in DB
         var vote = await db.Votes.FirstAsync();
-        vote!.UserId.Should().Be(user.Id);
+        vote!.User!.Id.Should().Be(user.Id);
         await sessionService.Received(1).GetOrCreateUserAsync();
     }
 
@@ -163,13 +163,13 @@ public class VoteServiceTests
         var service2 = CreateService(db, user2);
 
         // Act
-        await service1.SubmitVoteAsync(1, 90, 220, 50);
-        await service2.SubmitVoteAsync(3, 90, 220, 50);
+        await service1.SubmitVoteAsync(1, 220, 50);
+        await service2.SubmitVoteAsync(3, 220, 50);
 
         // Assert
         var votes = await db.Votes.OrderBy(v => v.Id).ToListAsync();
-        votes[0].UserId.Should().Be(user1.Id);
-        votes[1].UserId.Should().Be(user2.Id);
+        votes[0].User!.Id.Should().Be(user1.Id);
+        votes[1].User!.Id.Should().Be(user2.Id);
     }
 
     [Fact]
@@ -179,8 +179,8 @@ public class VoteServiceTests
         var db = CreateDbContext();
         var user = CreateAndSaveUser(db);
 
-        var vote1 = new Vote { UserId = user.Id, Level = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
-        var vote2 = new Vote { UserId = user.Id, Level = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-1) };
+        var vote1 = new Vote { User = user, Level = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
+        var vote2 = new Vote { User = user, Level = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-1) };
         db.Votes.Add(vote1);
         db.Votes.Add(vote2);
         await db.SaveChangesAsync();
@@ -221,7 +221,7 @@ public class VoteServiceTests
         var user1 = CreateAndSaveUser(db);
         var user2 = CreateAndSaveUser(db);
 
-        var vote = new Vote { UserId = user1.Id, Level = 1 };
+        var vote = new Vote { User = user1, Level = 1 };
         db.Votes.Add(vote);
         await db.SaveChangesAsync();
 
@@ -242,7 +242,7 @@ public class VoteServiceTests
         var db = CreateDbContext();
         var user = CreateAndSaveUser(db);
 
-        var vote = new Vote { UserId = user.Id, Level = 2 };
+        var vote = new Vote { User = user, Level = 2 };
         db.Votes.Add(vote);
         await db.SaveChangesAsync();
 
