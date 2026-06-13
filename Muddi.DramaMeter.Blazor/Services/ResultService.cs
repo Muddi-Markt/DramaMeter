@@ -20,9 +20,9 @@ public class DramaResult
     public int TotalVoteCount { get; set; }
 
     /// <summary>
-    /// The last 10 votes, ordered by most recent first.
+    /// The actual click positions (viewBox coords) of the last 10 votes, ordered by most recent first.
     /// </summary>
-    public List<Vote> LastVotes { get; set; } = new();
+    public List<(double X, double Y)>? ClickPositions { get; set; }
 }
 
 public interface IResultService
@@ -67,7 +67,10 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
             .OrderByDescending(v => v.CreatedAt)
             .Take(10)
             .ToListAsync(cancellationToken);
-        dramaResult.LastVotes = lastVotes;
+        dramaResult.ClickPositions = lastVotes
+            .Where(v => v.ClickViewBoxX.HasValue && v.ClickViewBoxY.HasValue)
+            .Select(v => (v.ClickViewBoxX!.Value, v.ClickViewBoxY!.Value))
+            .ToList();
 
         if (votes.Count == 0)
         {

@@ -44,13 +44,15 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(2);
+        await service.SubmitVoteAsync(2, 90, 220, 50);
 
         // Assert
         var vote = await db.Votes.FirstOrDefaultAsync();
         vote.Should().NotBeNull();
         vote!.UserId.Should().Be(user.Id);
         vote.Level.Should().Be(2);
+        vote.ClickViewBoxX.Should().Be(220);
+        vote.ClickViewBoxY.Should().Be(50);
     }
 
     [Theory]
@@ -66,7 +68,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(level);
+        await service.SubmitVoteAsync(level, 90, 220, 50);
 
         // Assert
         var vote = await db.Votes.FirstAsync();
@@ -82,9 +84,9 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act & Assert
-        await FluentActions.Awaiting(() => service.SubmitVoteAsync(4))
+        await FluentActions.Awaiting(() => service.SubmitVoteAsync(4, 90, 220, 50))
             .Should().ThrowAsync<ArgumentOutOfRangeException>();
-        await FluentActions.Awaiting(() => service.SubmitVoteAsync(-1))
+        await FluentActions.Awaiting(() => service.SubmitVoteAsync(-1, 90, 220, 50))
             .Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
@@ -103,7 +105,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act & Assert
-        var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(0))
+        var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(0, 90, 220, 50))
             .Should().ThrowAsync<InvalidOperationException>();
         ex.Which.Message.Should().Contain("10");
     }
@@ -123,7 +125,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        await service.SubmitVoteAsync(3);
+        await service.SubmitVoteAsync(3, 90, 220, 50);
 
         // Assert
         var votes = await db.Votes.ToListAsync();
@@ -141,7 +143,7 @@ public class VoteServiceTests
         var service = new VoteService(db, sessionService);
 
         // Act
-        await service.SubmitVoteAsync(1);
+        await service.SubmitVoteAsync(1, 90, 220, 50);
 
         // Assert — vote must be attributed to the session user, not the first user in DB
         var vote = await db.Votes.FirstAsync();
@@ -161,8 +163,8 @@ public class VoteServiceTests
         var service2 = CreateService(db, user2);
 
         // Act
-        await service1.SubmitVoteAsync(1);
-        await service2.SubmitVoteAsync(3);
+        await service1.SubmitVoteAsync(1, 90, 220, 50);
+        await service2.SubmitVoteAsync(3, 90, 220, 50);
 
         // Assert
         var votes = await db.Votes.OrderBy(v => v.Id).ToListAsync();

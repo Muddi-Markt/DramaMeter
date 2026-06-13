@@ -1,7 +1,10 @@
 @using Muddi.DramaMeter.Blazor.Services
 @using Muddi.DramaMeter.Blazor.Models
+@inject IJSRuntime JS
 
-<svg viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge">
+<svg @ref="_svgRef" viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge"
+     @onclick="OnGaugeClick">
+
     @* Needle pivot shadow *@
     <circle cx="@Cx" cy="@Cy" r="@InnerR + 5" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1" />
 
@@ -32,14 +35,20 @@
         @($"<text x=\"{lx:F1}\" y=\"{ly:F1}\" text-anchor=\"middle\" dominant-baseline=\"middle\" class=\"gauge-label\">{Labels[i]}</text>")
     }
 
-    @* Last 10 vote dots *@
-    @if (LastVoteLevels is not null && LastVoteLevels.Any())
+    @* Last 10 vote dots — rendered directly inside this SVG *@
+    @if (LastVotePositions is not null && LastVotePositions.Any())
     {
-        <LastVotes Levels="@LastVoteLevels" Cx="@Cx" Cy="@Cy" Radius="@OuterR" />
+        <LastVotes Positions="@LastVotePositions" />
     }
 </svg>
 
 @code {
+    private ElementReference _svgRef;
+    private double _scaleX = 1;
+    private double _scaleY = 1;
+    private double _rectLeft = 0;
+    private double _rectTop = 0;
+
     private const double Cx = 220;
     private const double Cy = 180;
     private const double OuterR = 130;
@@ -56,10 +65,62 @@
     [Parameter] public DramaResult? Result { get; set; }
     [Parameter] public bool ShowNeedle { get; set; }
     [Parameter] public double DramaLevel { get; set; } = 0;
-    [Parameter] public List<int>? LastVoteLevels { get; set; }
+    [Parameter] public List<(double X, double Y)>? LastVotePositions { get; set; }
+
+    /// <summary>
+    /// Fired when the user clicks on the gauge.
+    /// </summary>
+    [Parameter] public EventCallback<(int level, double angle, double viewBoxX, double viewBoxY)> OnVoteRequested { get; set; }
 
     private double NeedleAngle => DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Get SVG display dimensions and element position once
+            var size = await JS.InvokeAsync<double[]>(
+                "dramaMeterHelpers.getSvgScale", _svgRef);
+            var rect = await JS.InvokeAsync<double[]>(
+                "dramaMeterHelpers.getBoundingClientRect", _svgRef);
+
+            var w = size[0];
+            var h = size[1];
+            _rectLeft = rect[0];
+            _rectTop = rect[1];
+
+            if (w > 0 && h > 0)
+            {
+                _scaleX = 440.0 / w;
+                _scaleY = 320.0 / h;
+            }
+        }
+    }
+
+    private void OnGaugeClick(MouseEventArgs e)
+    {
+        // Convert client coordinates to SVG viewBox coordinates.
+        // Using clientX/clientY relative to the element is reliable
+        // for both mouse and touch events on mobile.
+        var cssX = e.ClientX - _rectLeft;
+        var cssY = e.ClientY - _rectTop;
+        var svgX = cssX * _scaleX;
+        var svgY = cssY * _scaleY;
+
+        // Calculate angle from center: 180°=left, 90°=top, 0°=right
+        var dx = svgX - Cx;
+        var dy = svgY - Cy;
+        var angle = Math.Atan2(-dy, dx) * 180.0 / Math.PI;
+
+        // Clamp to the gauge arc range
+        angle = Math.Clamp(angle, 0, 180);
+
+        // Map angle to level: 180→0, 135→1, 90→2, 45→3, 0→3
+        var level = Math.Min(3, (int)((180 - angle) / 45));
+
+        _ = OnVoteRequested.InvokeAsync((level, angle, svgX, svgY));
+    }
 
     private string GetArcPath(double startAngle, double endAngle)
     {

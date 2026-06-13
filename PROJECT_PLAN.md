@@ -264,9 +264,8 @@ DramaMeter/
 
 ### Phase 5: Frontend — Pages & Integration
 17. [x] **`Index.razor`**: Main page
-    - Gauge + 4 vote buttons
+    - Click/tap the gauge to vote (no buttons)
     - Animated needle + result + cooldown
-    - Cooldown transition between phases
 18. [x] **Integrate Blazor Server calls** (service methods called directly from Razor)
     - Vote, cooldown check, results, delete
 19. [x] **Styling**: Red background, white text, responsive design

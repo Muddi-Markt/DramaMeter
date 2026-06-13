@@ -7,10 +7,10 @@ namespace Muddi.DramaMeter.Blazor.Services;
 public interface IVoteService
 {
     /// <summary>
-    /// Submit a vote at the given level (0-3).
+    /// Submit a vote with the clicked level and click position.
     /// Throws <see cref="InvalidOperationException"/> if the user is still in cooldown.
     /// </summary>
-    Task SubmitVoteAsync(int level, CancellationToken cancellationToken = default);
+    Task SubmitVoteAsync(int level, double clickAngle, double viewBoxX, double viewBoxY, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Delete the current user's most recent vote.
@@ -42,12 +42,24 @@ public class VoteService(
 {
     private static readonly TimeSpan CooldownPeriod = TimeSpan.FromMinutes(10);
 
-    public async Task SubmitVoteAsync(int level, CancellationToken cancellationToken = default)
+    public async Task SubmitVoteAsync(int level, double clickAngle, double viewBoxX, double viewBoxY, CancellationToken cancellationToken = default)
     {
         // Validate level
         if (level < 0 || level > 3)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "Level must be between 0 and 3.");
+        }
+
+        // Validate click angle
+        if (clickAngle < 0 || clickAngle > 180)
+        {
+            throw new ArgumentOutOfRangeException(nameof(clickAngle), "Click angle must be between 0 and 180 degrees.");
+        }
+
+        // Validate viewBox coordinates
+        if (viewBoxX < 0 || viewBoxX > 440 || viewBoxY < 0 || viewBoxY > 320)
+        {
+            throw new ArgumentOutOfRangeException(nameof(viewBoxX), "Click position must be within the gauge SVG bounds.");
         }
 
         var user = await sessionService.GetOrCreateUserAsync();
@@ -66,7 +78,14 @@ public class VoteService(
             }
         }
 
-        var vote = new Vote { UserId = user.Id, Level = level };
+        var vote = new Vote
+        {
+            UserId = user.Id,
+            Level = level,
+            ClickAngle = clickAngle,
+            ClickViewBoxX = viewBoxX,
+            ClickViewBoxY = viewBoxY,
+        };
         dbContext.Votes.Add(vote);
         await dbContext.SaveChangesAsync(cancellationToken);
     }

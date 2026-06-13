@@ -32,6 +32,7 @@ public class ResultServiceTests
             {
                 UserId = user.Id,
                 Level = vote.Level,
+                ClickAngle = 90,
                 CreatedAt = DateTime.UtcNow - vote.AgeSince
             });
         }
@@ -146,7 +147,7 @@ public class ResultServiceTests
     }
 
     [Fact]
-    public async Task GetDramaResultAsync_LastVotes_ReturnsUpToTen()
+    public async Task GetDramaResultAsync_ClickPositions_ReturnsUpToTen()
     {
         // Arrange
         var db = CreateDbContext();
@@ -160,6 +161,9 @@ public class ResultServiceTests
             {
                 UserId = user.Id,
                 Level = i % 4,
+                ClickAngle = (i * 12) % 180,
+                ClickViewBoxX = 90 + i * 20,
+                ClickViewBoxY = 50 + i * 5,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-i * 10)
             });
         }
@@ -170,24 +174,39 @@ public class ResultServiceTests
         // Act
         var result = await service.GetDramaResultAsync();
 
-        // Assert
-        result.LastVotes.Count.Should().Be(10);
-        result.LastVotes[0].CreatedAt.Should().BeAfter(result.LastVotes[9].CreatedAt.AddMilliseconds(-1));
+        // Assert — most recent (i=0) is first
+        result.ClickPositions.Should().NotBeNull();
+        result.ClickPositions!.Count.Should().Be(10);
+        result.ClickPositions[0].X.Should().Be(90);   // i=0: 90 + 0*20
+        result.ClickPositions[0].Y.Should().Be(50);   // i=0: 50 + 0*5
+        result.ClickPositions[9].X.Should().Be(270);  // i=9: 90 + 9*20
+        result.ClickPositions[9].Y.Should().Be(95);   // i=9: 50 + 9*5
     }
 
     [Fact]
-    public async Task GetDramaResultAsync_LastVotes_ReturnsFewerThanTen_WhenFewVotes()
+    public async Task GetDramaResultAsync_ClickPositions_ExcludesNulls()
     {
         // Arrange
         var db = CreateDbContext();
-        AddUserAndVotes(db, (1, TimeSpan.Zero), (2, TimeSpan.FromMinutes(5)));
+        var user = new User();
+        db.Users.Add(user);
+        db.SaveChanges();
+
+        // Vote without viewBox coords
+        db.Votes.Add(new Vote { UserId = user.Id, Level = 1, ClickAngle = 90, CreatedAt = DateTime.UtcNow.AddMinutes(-60) });
+        // Vote with viewBox coords
+        db.Votes.Add(new Vote { UserId = user.Id, Level = 2, ClickAngle = 90, ClickViewBoxX = 200, ClickViewBoxY = 100, CreatedAt = DateTime.UtcNow.AddMinutes(-30) });
+        await db.SaveChangesAsync();
+
         var service = new ResultService(db);
 
         // Act
         var result = await service.GetDramaResultAsync();
 
         // Assert
-        result.LastVotes.Count.Should().Be(2);
+        result.ClickPositions!.Count.Should().Be(1);
+        result.ClickPositions[0].X.Should().Be(200);
+        result.ClickPositions[0].Y.Should().Be(100);
     }
 
     [Fact]

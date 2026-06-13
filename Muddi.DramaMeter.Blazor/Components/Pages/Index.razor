@@ -13,22 +13,11 @@
     {
         <h1 class="title">MUDDI's Drama Meter</h1>
 
-        <!-- Gauge with animated needle and last-vote dots -->
+        <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
         <Gauge DramaLevel="@_dramaLevel"
                ShowNeedle="true"
-               LastVoteLevels="@_lastVoteLevels" />
-
-        <!-- 4 vote buttons -->
-        <div class="vote-buttons">
-            @foreach (var btn in _buttons)
-            {
-                <VoteButton Level="@btn.Level"
-                            Label="@btn.Label"
-                            Color="@btn.Color"
-                            Disabled="@_isCooldown"
-                            OnVote="SubmitVote" />
-            }
-        </div>
+               LastVotePositions="@_lastVotePositions"
+               OnVoteRequested="HandleGaugeVote" />
 
         <!-- Cooldown countdown -->
         @if (_cooldownRemaining.HasValue)
@@ -59,15 +48,7 @@
     private bool _hasVoted;
     private TimeSpan? _cooldownRemaining;
     private double _dramaLevel;
-    private List<int> _lastVoteLevels = new();
-
-    private static readonly (int Level, string Label, string Color)[] _buttons = new[]
-    {
-        (0, "No Drama", "#4caf50"),
-        (1, "It's Sparking", "#fdd835"),
-        (2, "Bottomless", "#ff9800"),
-        (3, "Extraordinary Session!", "#c62828")
-    };
+    private List<(double X, double Y)> _lastVotePositions = new();
 
     private bool _isCooldown => _cooldownRemaining.HasValue;
 
@@ -80,7 +61,7 @@
     {
         _dramaResult = await ResultService.GetDramaResultAsync();
         _dramaLevel = _dramaResult.DramaLevel;
-        _lastVoteLevels = _dramaResult.LastVotes.Select(v => v.Level).ToList();
+        _lastVotePositions = _dramaResult.ClickPositions ?? new();
 
         var lastVote = await VoteService.GetUserLastVoteAsync();
         _hasVoted = lastVote != null;
@@ -89,11 +70,11 @@
         StateHasChanged();
     }
 
-    private async Task SubmitVote(int level)
+    private async Task HandleGaugeVote((int level, double angle, double viewBoxX, double viewBoxY) args)
     {
         try
         {
-            await VoteService.SubmitVoteAsync(level);
+            await VoteService.SubmitVoteAsync(args.level, args.angle, args.viewBoxX, args.viewBoxY);
         }
         catch (InvalidOperationException)
         {
