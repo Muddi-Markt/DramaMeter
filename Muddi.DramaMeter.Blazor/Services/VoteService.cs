@@ -13,16 +13,21 @@ public interface IVoteService
     Task SubmitVoteAsync(int level, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Delete the user's most recent vote.
+    /// Delete the current user's most recent vote.
     /// Returns false if the user has no votes.
     /// </summary>
-    Task<bool> DeleteMostRecentVoteAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Delete a specific vote by ID, if it belongs to the user.
     /// Returns false if the vote was not found or does not belong to the user.
     /// </summary>
     Task<bool> DeleteVoteByIdAsync(long voteId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the current user's most recent vote (or null if none).
+    /// </summary>
+    Task<Vote?> GetUserLastVoteAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the remaining cooldown time for the current user.
@@ -66,7 +71,13 @@ public class VoteService(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> DeleteMostRecentVoteAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default)
+    {
+        var user = await sessionService.GetOrCreateUserAsync();
+        return await DeleteMostRecentVoteAsync(user.Id, cancellationToken);
+    }
+
+    private async Task<bool> DeleteMostRecentVoteAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var vote = await dbContext.Votes
             .Where(v => v.UserId == userId)
@@ -81,6 +92,15 @@ public class VoteService(
         dbContext.Votes.Remove(vote);
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<Vote?> GetUserLastVoteAsync(CancellationToken cancellationToken = default)
+    {
+        var user = await sessionService.GetOrCreateUserAsync();
+        return await dbContext.Votes
+            .Where(v => v.UserId == user.Id)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteVoteByIdAsync(long voteId, Guid userId, CancellationToken cancellationToken = default)

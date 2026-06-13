@@ -1,0 +1,56 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.loading {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.title {
+    color: #ffffff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.vote-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 420px;
+}
+
+.delete-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    border-color: rgba(255, 255, 255, 0.8);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.vote-count {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}

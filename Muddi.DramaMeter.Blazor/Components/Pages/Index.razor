@@ -1,0 +1,116 @@
+@page "/"
+@inject IVoteService VoteService
+@inject IResultService ResultService
+
+<PageTitle>Drama Meter</PageTitle>
+
+<div class="page">
+    @if (_isLoading)
+    {
+        <div class="loading">Loading drama meter…</div>
+    }
+    else
+    {
+        <h1 class="title">MUDDI's Drama Meter</h1>
+
+        <!-- Gauge with animated needle and last-vote dots -->
+        <Gauge DramaLevel="@_dramaLevel"
+               ShowNeedle="true"
+               LastVoteLevels="@_lastVoteLevels" />
+
+        <!-- 4 vote buttons -->
+        <div class="vote-buttons">
+            @foreach (var btn in _buttons)
+            {
+                <VoteButton Level="@btn.Level"
+                            Label="@btn.Label"
+                            Color="@btn.Color"
+                            Disabled="@_isCooldown"
+                            OnVote="SubmitVote" />
+            }
+        </div>
+
+        <!-- Cooldown countdown -->
+        @if (_cooldownRemaining.HasValue)
+        {
+            <CooldownTimer Remaining="@_cooldownRemaining.Value"
+                           OnElapsed="OnCooldownElapsed" />
+        }
+
+        <!-- Delete vote -->
+        @if (_hasVoted)
+        {
+            <button class="delete-btn" @onclick="DeleteVote">Delete Vote</button>
+        }
+
+        <!-- Total votes cast -->
+        @if (_dramaResult?.TotalVoteCount > 0)
+        {
+            <span class="vote-count">
+                @_dramaResult.TotalVoteCount vote@(_dramaResult.TotalVoteCount == 1 ? "" : "s") cast
+            </span>
+        }
+    }
+</div>
+
+@code {
+    private DramaResult? _dramaResult;
+    private bool _isLoading = true;
+    private bool _hasVoted;
+    private TimeSpan? _cooldownRemaining;
+    private double _dramaLevel;
+    private List<int> _lastVoteLevels = new();
+
+    private static readonly (int Level, string Label, string Color)[] _buttons = new[]
+    {
+        (0, "No Drama", "#4caf50"),
+        (1, "It's Sparking", "#fdd835"),
+        (2, "Bottomless", "#ff9800"),
+        (3, "Extraordinary Session!", "#c62828")
+    };
+
+    private bool _isCooldown => _cooldownRemaining.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _dramaResult = await ResultService.GetDramaResultAsync();
+        _dramaLevel = _dramaResult.DramaLevel;
+        _lastVoteLevels = _dramaResult.LastVotes.Select(v => v.Level).ToList();
+
+        var lastVote = await VoteService.GetUserLastVoteAsync();
+        _hasVoted = lastVote != null;
+        _cooldownRemaining = VoteService.GetCooldownRemaining(lastVote?.CreatedAt);
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task SubmitVote(int level)
+    {
+        try
+        {
+            await VoteService.SubmitVoteAsync(level);
+        }
+        catch (InvalidOperationException)
+        {
+            // Already in cooldown — just refresh state
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteVote()
+    {
+        await VoteService.DeleteMostRecentVoteAsync();
+        await LoadAsync();
+    }
+
+    private async Task OnCooldownElapsed()
+    {
+        await LoadAsync();
+    }
+}

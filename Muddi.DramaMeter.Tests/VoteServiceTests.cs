@@ -186,7 +186,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        var deleted = await service.DeleteMostRecentVoteAsync(user.Id);
+        var deleted = await service.DeleteMostRecentVoteAsync();
 
         // Assert
         deleted.Should().BeTrue();
@@ -204,7 +204,7 @@ public class VoteServiceTests
         var service = CreateService(db, user);
 
         // Act
-        var deleted = await service.DeleteMostRecentVoteAsync(user.Id);
+        var deleted = await service.DeleteMostRecentVoteAsync();
 
         // Assert
         deleted.Should().BeFalse();

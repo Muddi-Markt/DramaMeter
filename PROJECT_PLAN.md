@@ -263,13 +263,13 @@ DramaMeter/
     - Updates every second via Timer
 
 ### Phase 5: Frontend — Pages & Integration
-17. [ ] **`Index.razor`**: Main page
-    - Phase 1: Empty gauge + 4 vote buttons
-    - Phase 2: Animated gauge + result + cooldown
-    - Transition between phases
-18. [ ] **Integrate Blazor Server calls** (service methods called directly from Razor)
+17. [x] **`Index.razor`**: Main page
+    - Gauge + 4 vote buttons
+    - Animated needle + result + cooldown
+    - Cooldown transition between phases
+18. [x] **Integrate Blazor Server calls** (service methods called directly from Razor)
     - Vote, cooldown check, results, delete
-19. [ ] **Styling**: Red background, white text, responsive design
+19. [x] **Styling**: Red background, white text, responsive design
 
 ### Phase 6: Polish
 20. [ ] **Animations**: Needle flies to position, fade-in effects

@@ -58,7 +58,7 @@
     [Parameter] public double DramaLevel { get; set; } = 0;
     [Parameter] public List<int>? LastVoteLevels { get; set; }
 
-    private double NeedleAngle => (3.0 - DramaLevel) * 60.0;
+    private double NeedleAngle => DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
 
     private string GetArcPath(double startAngle, double endAngle)
@@ -77,6 +77,6 @@
         var x4 = Cx + InnerR * sCos;
         var y4 = Cy - InnerR * sSin;
 
-        return $"""M {x1:F1},{y1:F1} A {OuterR},{OuterR} 0 0 0 {x2:F1},{y2:F1} L {x3:F1},{y3:F1} A {InnerR},{InnerR} 0 0 1 {x4:F1},{y4:F1} Z""";
+        return $"""M {x1:F1},{y1:F1} A {OuterR},{OuterR} 0 0 1 {x2:F1},{y2:F1} L {x3:F1},{y3:F1} A {InnerR},{InnerR} 0 0 0 {x4:F1},{y4:F1} Z""";
     }
 }
