@@ -24,6 +24,12 @@
                   stroke="white" stroke-width="3" stroke-linecap="round"/>
             <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
         </g>
+        
+        @* Last 10 vote dots — rendered directly inside this SVG *@
+        @if (LastVotePositions is not null && LastVotePositions.Any())
+        {
+            <LastVotes Positions="@LastVotePositions"/>
+        }
     }
 
     @* Segment labels — raw HTML since <text> is Razor-reserved *@
@@ -37,11 +43,7 @@
                   class="gauge-label">@Labels[i]</text></text>
     }
 
-    @* Last 10 vote dots — rendered directly inside this SVG *@
-    @if (LastVotePositions is not null && LastVotePositions.Any())
-    {
-        <LastVotes Positions="@LastVotePositions"/>
-    }
+    
 </svg>
 
 @code {

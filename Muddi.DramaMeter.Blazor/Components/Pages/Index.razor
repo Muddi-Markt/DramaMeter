@@ -13,11 +13,18 @@
 
     <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
     <Gauge DramaLevel="@_dramaLevel"
-           ShowNeedle="true"
+           ShowNeedle="@_hasVoted"
            LastVotePositions="@_lastVotePositions"
            OnVoteRequested="HandleGaugeVote"/>
 
     <footer>
+        @if (!_hasVoted)
+        {
+            <div>
+                <h4>Na, wie ist die Stimmung gerade?</h4>
+                <p>Klicke auf den Bereich, der am besten zu deiner MUDDI Stimmung passt</p>
+            </div>
+        }
         <!-- Cooldown countdown -->
         @if (_cooldownRemaining.HasValue)
         {
@@ -58,7 +65,7 @@
     {
         _dramaResult = await ResultService.GetDramaResultAsync();
         _dramaLevel = _dramaResult.DramaLevel;
-        _lastVotePositions = _dramaResult.ClickPositions ?? new();
+        _lastVotePositions = _dramaResult.ClickPositions ?? [];
 
         var lastVote = await VoteService.GetUserLastVoteAsync();
         _hasVoted = lastVote != null;
