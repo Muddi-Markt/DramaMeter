@@ -17,28 +17,30 @@
         <Gauge DramaLevel="@_dramaLevel"
                ShowNeedle="true"
                LastVotePositions="@_lastVotePositions"
-               OnVoteRequested="HandleGaugeVote" />
+               OnVoteRequested="HandleGaugeVote"/>
 
-        <!-- Cooldown countdown -->
-        @if (_cooldownRemaining.HasValue)
-        {
-            <CooldownTimer Remaining="@_cooldownRemaining.Value"
-                           OnElapsed="OnCooldownElapsed" />
-        }
+        <footer>
+            <!-- Cooldown countdown -->
+            @if (_cooldownRemaining.HasValue)
+            {
+                <CooldownTimer Remaining="@_cooldownRemaining.Value"
+                               OnElapsed="OnCooldownElapsed"/>
+            }
 
-        <!-- Delete vote -->
-        @if (_hasVoted)
-        {
-            <button class="delete-btn" @onclick="DeleteVote">Delete Vote</button>
-        }
+            <!-- Delete vote -->
+            @if (_hasVoted)
+            {
+                <button class="delete-btn" @onclick="DeleteVote">Delete Vote</button>
+            }
 
-        <!-- Total votes cast -->
-        @if (_dramaResult?.TotalVoteCount > 0)
-        {
-            <span class="vote-count">
+            <!-- Total votes cast -->
+            @if (_dramaResult?.TotalVoteCount > 0)
+            {
+                <span class="vote-count">
                 @_dramaResult.TotalVoteCount vote@(_dramaResult.TotalVoteCount == 1 ? "" : "s") cast
             </span>
-        }
+            }
+        </footer>
     }
 </div>
 
@@ -94,4 +96,5 @@
     {
         await LoadAsync();
     }
+
 }

@@ -6,14 +6,14 @@
      @onclick="OnGaugeClick">
 
     @* Needle pivot shadow *@
-    <circle cx="@Cx" cy="@Cy" r="@InnerR + 5" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1" />
+    <circle cx="@Cx" cy="@Cy" r="@InnerR + 5" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
 
     @* 4 colored arc segments *@
     @for (int i = 0; i < 4; i++)
     {
         var startAngle = 180 - i * 45.0;
         var endAngle = 180 - (i + 1) * 45.0;
-        <path d="@GetArcPath(startAngle, endAngle)" fill="@Colors[i]" class="gauge-segment" />
+        <path d="@GetArcPath(startAngle, endAngle)" fill="@Colors[i]" class="gauge-segment"/>
     }
 
     @* Animated needle *@
@@ -21,8 +21,8 @@
     {
         <g class="needle" style="transform: rotate(@(NeedleAngle)deg)">
             <line x1="@Cx" y1="@Cy" x2="@Cx" y2="@NeedleTipY"
-                  stroke="white" stroke-width="3" stroke-linecap="round" />
-            <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1" />
+                  stroke="white" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
         </g>
     }
 
@@ -32,13 +32,15 @@
         var midAngle = 180 - (i + 0.5) * 45.0;
         var lx = Cx + LabelR * Math.Cos(midAngle * Math.PI / 180);
         var ly = Cy - LabelR * Math.Sin(midAngle * Math.PI / 180);
-        @($"<text x=\"{lx:F1}\" y=\"{ly:F1}\" text-anchor=\"middle\" dominant-baseline=\"middle\" class=\"gauge-label\">{Labels[i]}</text>")
+        <text>
+            <text x="@lx" y="@ly" text-anchor="middle" dominant-baseline="middle"
+                  class="gauge-label">@Labels[i]</text></text>
     }
 
     @* Last 10 vote dots — rendered directly inside this SVG *@
     @if (LastVotePositions is not null && LastVotePositions.Any())
     {
-        <LastVotes Positions="@LastVotePositions" />
+        <LastVotes Positions="@LastVotePositions"/>
     }
 </svg>
 
@@ -57,7 +59,7 @@
     private const double NeedleLen = 115;
 
     private static readonly string[] _colors = { "#4caf50", "#fdd835", "#ff9800", "#c62828" };
-    private static readonly string[] _labels = { "No Drama", "It's Sparking", "Bottomless", "Extraordinary Session!" };
+    private static readonly string[] _labels = { "No Drama", "Es knistert", "Bodenlos!", "SONDERPLENUM" };
 
     private string[] Colors => _colors;
     private string[] Labels => _labels;
@@ -70,7 +72,8 @@
     /// <summary>
     /// Fired when the user clicks on the gauge.
     /// </summary>
-    [Parameter] public EventCallback<(int level, double angle, double viewBoxX, double viewBoxY)> OnVoteRequested { get; set; }
+    [Parameter]
+    public EventCallback<(int level, double angle, double viewBoxX, double viewBoxY)> OnVoteRequested { get; set; }
 
     private double NeedleAngle => DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
@@ -79,32 +82,40 @@
     {
         if (firstRender)
         {
-            // Get SVG display dimensions and element position once
-            var size = await JS.InvokeAsync<double[]>(
-                "dramaMeterHelpers.getSvgScale", _svgRef);
-            var rect = await JS.InvokeAsync<double[]>(
-                "dramaMeterHelpers.getBoundingClientRect", _svgRef);
-
-            var w = size[0];
-            var h = size[1];
-            _rectLeft = rect[0];
-            _rectTop = rect[1];
-
-            if (w > 0 && h > 0)
-            {
-                _scaleX = 440.0 / w;
-                _scaleY = 320.0 / h;
-            }
+            await GetCurrentScaleAsync();
         }
     }
 
-    private void OnGaugeClick(MouseEventArgs e)
+    private async Task GetCurrentScaleAsync()
     {
+        // Get SVG display dimensions and element position once
+        var size = await JS.InvokeAsync<double[]>(
+            "dramaMeterHelpers.getSvgScale", _svgRef);
+        var rect = await JS.InvokeAsync<double[]>(
+            "dramaMeterHelpers.getBoundingClientRect", _svgRef);
+
+        var w = size[0];
+        var h = size[1];
+        _rectLeft = rect[0];
+        _rectTop = rect[1];
+
+        if (w > 0 && h > 0)
+        {
+            _scaleX = 440.0 / w;
+            _scaleY = 320.0 / h;
+        }
+    }
+
+    private async Task OnGaugeClick(MouseEventArgs e)
+    {
+        await GetCurrentScaleAsync();
         // Convert client coordinates to SVG viewBox coordinates.
         // Using clientX/clientY relative to the element is reliable
         // for both mouse and touch events on mobile.
         var cssX = e.ClientX - _rectLeft;
         var cssY = e.ClientY - _rectTop;
+        if (cssY > 132)
+            return;
         var svgX = cssX * _scaleX;
         var svgY = cssY * _scaleY;
 
@@ -140,4 +151,5 @@
 
         return $"""M {x1:F1},{y1:F1} A {OuterR},{OuterR} 0 0 1 {x2:F1},{y2:F1} L {x3:F1},{y3:F1} A {InnerR},{InnerR} 0 0 0 {x4:F1},{y4:F1} Z""";
     }
+
 }

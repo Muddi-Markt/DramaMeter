@@ -6,6 +6,14 @@
     width: 100%;
 }
 
+footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    height: 150px;
+}
+
 .loading {
     color: rgba(255, 255, 255, 0.8);
     font-size: 18px;
