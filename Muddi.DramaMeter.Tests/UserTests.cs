@@ -9,8 +9,8 @@ public class UserTests
     {
         var user = new User();
 
-        Assert.NotEqual(Guid.Empty, user.Id);
-        Assert.True(user.CreatedAt <= DateTime.UtcNow);
+        user.Id.Should().NotBe(Guid.Empty);
+        user.CreatedAt.Should().BeBefore(DateTime.UtcNow.AddMilliseconds(1));
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public class UserTests
         var id = Guid.NewGuid();
         var user = new User { Id = id };
 
-        Assert.Equal(id, user.Id);
+        user.Id.Should().Be(id);
     }
 
     [Fact]
@@ -28,6 +28,6 @@ public class UserTests
         var now = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         var user = new User { CreatedAt = now };
 
-        Assert.Equal(now, user.CreatedAt);
+        user.CreatedAt.Should().Be(now);
     }
 }

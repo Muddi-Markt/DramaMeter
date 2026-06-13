@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Muddi.DramaMeter.Blazor.Components;
 using Muddi.DramaMeter.Blazor.Data;
+using Muddi.DramaMeter.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
 
+// Register HttpContextAccessor (needed for cookie access in services)
+builder.Services.AddHttpContextAccessor();
+
 // Register DbContext with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DramaMeter")
 	?? throw new InvalidOperationException("Connection string 'DramaMeter' not found.");
 builder.Services.AddDbContext<DramaMeterDbContext>(options =>
 	options.UseNpgsql(connectionString));
+
+// Register backend services
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IVoteService, VoteService>();
+builder.Services.AddScoped<IResultService, ResultService>();
 
 var app = builder.Build();
 

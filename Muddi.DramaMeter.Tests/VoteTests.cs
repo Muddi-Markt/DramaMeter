@@ -10,10 +10,10 @@ public class VoteTests
         var user = new User();
         var vote = new Vote { UserId = user.Id };
 
-        Assert.Equal(user.Id, vote.UserId);
-        Assert.Equal(0, vote.Level); // default int is 0 = No Drama
-        Assert.True(vote.CreatedAt <= DateTime.UtcNow);
-        Assert.Null(vote.User); // FK navigation not set by default
+        vote.UserId.Should().Be(user.Id);
+        vote.Level.Should().Be(0); // default int is 0 = No Drama
+        vote.CreatedAt.Should().BeBefore(DateTime.UtcNow.AddMilliseconds(1));
+        vote.User.Should().BeNull(); // FK navigation not set by default
     }
 
     [Theory]
@@ -26,7 +26,7 @@ public class VoteTests
         var user = new User();
         var vote = new Vote { UserId = user.Id, Level = level };
 
-        Assert.Equal(level, vote.Level);
+        vote.Level.Should().Be(level);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class VoteTests
         var user = new User();
         var vote = new Vote { UserId = user.Id, User = user };
 
-        Assert.Same(user, vote.User);
+        vote.User.Should().Be(user);
     }
 
     [Fact]
@@ -43,6 +43,6 @@ public class VoteTests
     {
         var vote = new Vote();
 
-        Assert.Equal(0, vote.Id); // default long is 0
+        vote.Id.Should().Be(0); // default long is 0
     }
 }

@@ -3,7 +3,7 @@
 > A Blazor Server .NET 10 app for a voluntary association.
 > Branding: white text on red background (#e53231).
 
-**Status:** Phase 1–2 complete — infrastructure, data layer, entities, DbContext, auto-migration on startup, and unit tests (17 passing).
+**Status:** Phase 1–3 complete — infrastructure, data layer, entities, DbContext, auto-migration on startup, unit tests (47 passing), and all three backend services (Session, Vote, Result).
 
 ## 1. Feature Summary
 
@@ -236,15 +236,15 @@ DramaMeter/
 8. [x] **Create first migration** and apply it — verified tables exist in PostgreSQL
 9. [x] **Write unit tests** for entities & DbContext (optional) — `UserTests`, `VoteTests`, `DramaMeterDbContextTests`
 
-### Phase 3: Backend Services
-10. [ ] **`SessionService`**: Cookie-based UUID management
+### Phase 3: Backend Services ✅ COMPLETE
+10. [x] **`SessionService`**: Cookie-based UUID management
     - Create session if no cookie exists
     - Validate existing cookie
-11. [ ] **`VoteService`**: Vote CRUD operations
+11. [x] **`VoteService`**: Vote CRUD operations
     - Submit vote (with cooldown check)
     - Delete own vote
     - Check remaining cooldown
-12. [ ] **`ResultService`**: Result calculation
+12. [x] **`ResultService`**: Result calculation
     - EWMA calculation
     - Last 10 votes retrieval
     - Drama drift logic (see Section 7)
