@@ -250,18 +250,17 @@ DramaMeter/
     - Drama drift logic (see Section 7)
 
 ### Phase 4: Frontend — Gauge Components
-13. [ ] **Create `Gauge.razor`** SVG component
+13. [x] **Create `Gauge.razor`** SVG component
     - 4 colored segments (green, yellow, orange, dark red)
-    - Animatable needle (0.0 to 3.0)
+    - Animatable needle (0.0 to 3.0) with CSS transition
     - Labels under each segment
-14. [ ] **Create `VoteButton.razor`** × 4
-    - Hover effects
-    - Disabled state during cooldown
-15. [ ] **Create `LastVotes.razor`**
+14. [x] **Create `VoteButton.razor`** × 4
+    - Hover effects, disabled state during cooldown
+15. [x] **Create `LastVotes.razor`**
     - Small black dots on the gauge scale at real click positions
-16. [ ] **Create `CooldownTimer.razor`**
+16. [x] **Create `CooldownTimer.razor`**
     - Countdown in minutes/seconds
-    - Updates every second
+    - Updates every second via Timer
 
 ### Phase 5: Frontend — Pages & Integration
 17. [ ] **`Index.razor`**: Main page

@@ -1,0 +1,21 @@
+.cooldown-timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.cooldown-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.cooldown-text {
+    white-space: nowrap;
+}

@@ -1,0 +1,42 @@
+@using System.Globalization
+
+<button
+    class="vote-button"
+    style="background-color: @Color; --btn-color: @HoverColor"
+    disabled="@Disabled"
+    @onclick="OnVoteClicked">
+    <span class="vote-label">@Label</span>
+    @if (Disabled)
+    {
+        <span class="vote-level">Level @Level</span>
+    }
+    else
+    {
+        <span class="vote-level">@Level</span>
+    }
+</button>
+
+@code {
+    [Parameter] public int Level { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Color { get; set; } = "#4caf50";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<int> OnVote { get; set; }
+
+    private string HoverColor => Color switch
+    {
+        "#4caf50" => "#66bb6a",
+        "#fdd835" => "#ffeb3b",
+        "#ff9800" => "#ffb74d",
+        "#c62828" => "#ef5350",
+        _ => Color
+    };
+
+    private async Task OnVoteClicked()
+    {
+        if (!Disabled)
+        {
+            await OnVote.InvokeAsync(Level);
+        }
+    }
+}

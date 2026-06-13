@@ -1,0 +1,85 @@
+@using System.Threading
+
+@if (_remaining > TimeSpan.Zero)
+{
+    <div class="cooldown-timer">
+        <span class="cooldown-icon">⏱</span>
+        <span class="cooldown-text">
+            You can vote again in @FormatRemaining()
+        </span>
+    </div>
+}
+
+@code {
+    [Parameter] public TimeSpan Remaining { get; set; }
+    [Parameter] public EventCallback OnElapsed { get; set; }
+
+    private TimeSpan _remaining;
+    private Timer? _timer;
+    private bool _disposed;
+
+    protected override void OnInitialized()
+    {
+        _remaining = Remaining;
+        StartTimer();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!(_remaining == Remaining && _remaining > TimeSpan.Zero))
+        {
+            _remaining = Remaining;
+            StopTimer();
+            StartTimer();
+        }
+    }
+
+    private void StartTimer()
+    {
+        if (_remaining > TimeSpan.Zero)
+        {
+            _timer = new Timer(OnTick, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+    }
+
+    private void StopTimer()
+    {
+        _timer?.Dispose();
+        _timer = null;
+    }
+
+    private void OnTick(object? state)
+    {
+        if (_disposed) return;
+
+        InvokeAsync(async () =>
+        {
+            _remaining = _remaining.Subtract(TimeSpan.FromSeconds(1));
+            if (_remaining < TimeSpan.Zero) _remaining = TimeSpan.Zero;
+
+            StateHasChanged();
+
+            if (_remaining <= TimeSpan.Zero)
+            {
+                StopTimer();
+                await OnElapsed.InvokeAsync();
+            }
+        });
+    }
+
+    private string FormatRemaining()
+    {
+        if (_remaining.TotalMinutes >= 1)
+        {
+            return $"{_remaining.Minutes} min {_remaining.Seconds} sec";
+        }
+        return $"{_remaining.TotalSeconds:F0} sec";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        StopTimer();
+        await ValueTask.CompletedTask;
+    }
+}

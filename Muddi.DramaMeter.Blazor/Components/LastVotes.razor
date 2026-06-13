@@ -1,0 +1,19 @@
+@if (Levels is not null && Levels.Any())
+{
+    <svg viewBox="0 0 440 320" class="last-votes-svg" aria-label="Last 10 votes">
+        @foreach (var level in Levels)
+        {
+            var angle = (3.0 - level) * 60.0;
+            var dx = Radius * Math.Cos(angle * Math.PI / 180);
+            var dy = Radius * Math.Sin(angle * Math.PI / 180);
+            <circle class="vote-dot" cx="@Cx + dx" cy="@Cy - dy" r="4" />
+        }
+    </svg>
+}
+
+@code {
+    [Parameter] public List<int>? Levels { get; set; }
+    [Parameter] public double Cx { get; set; } = 220;
+    [Parameter] public double Cy { get; set; } = 180;
+    [Parameter] public double Radius { get; set; } = 130;
+}

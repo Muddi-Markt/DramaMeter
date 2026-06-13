@@ -1,0 +1,32 @@
+.gauge-svg {
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+}
+
+.gauge-segment {
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 1;
+    transition: opacity 0.2s ease;
+}
+
+.gauge-segment:hover {
+    opacity: 0.85;
+}
+
+.gauge-label {
+    fill: #ffffff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    user-select: none;
+}
+
+.needle {
+    transform-origin: 220px 180px;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
