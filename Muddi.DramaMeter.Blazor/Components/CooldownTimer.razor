@@ -1,11 +1,12 @@
 @using System.Threading
+@implements IAsyncDisposable
 
 @if (_remaining > TimeSpan.Zero)
 {
     <div class="cooldown-timer">
         <span class="cooldown-icon">⏱</span>
         <span class="cooldown-text">
-            You can vote again in @FormatRemaining()
+            Du kannst in @FormatRemaining() wieder abstimmen
         </span>
     </div>
 }
@@ -71,15 +72,17 @@
     {
         if (_remaining.TotalMinutes >= 1)
         {
-            return $"{_remaining.Minutes} min {_remaining.Seconds} sec";
+            return $"{_remaining.Minutes} min {_remaining.Seconds:00} sek";
         }
-        return $"{_remaining.TotalSeconds:F0} sec";
+
+        return $"{_remaining.TotalSeconds:F0} sek";
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _disposed = true;
         StopTimer();
-        await ValueTask.CompletedTask;
+        return ValueTask.CompletedTask;
     }
+
 }
