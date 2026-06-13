@@ -3,7 +3,7 @@
 > A Blazor Server .NET 10 app for a voluntary association.
 > Branding: white text on red background (#e53231).
 
-**Status:** Foundation (project skeleton + Dockerfile) exists. Ready to implement.
+**Status:** Phase 1–2 complete — infrastructure, data layer, entities, DbContext, auto-migration on startup, and unit tests (17 passing).
 
 ## 1. Feature Summary
 
@@ -223,18 +223,18 @@ DramaMeter/
 
 ## 10. Implementation Steps
 
-### Phase 1: Foundation (Infrastructure)
+### Phase 1: Foundation (Infrastructure) ✅ COMPLETE
 1. [x] **Create .NET 10 Blazor Server project** — existing skeleton (`Muddi.DramaMeter.Blazor`)
 2. [x] **Set up Dockerfile** — multi-stage, .NET 10, ports 8080/8081
-3. [ ] **Create docker-compose.yml** with app + PostgreSQL
-4. [ ] **Add NuGet packages** — EF Core, Npgsql, EFCore.Design
-5. [ ] **Configure PostgreSQL connection string** (environment variable)
+3. [x] **Create docker-compose.yml** with app + PostgreSQL (healthcheck, named volume)
+4. [x] **Add NuGet packages** — EF Core 10.0.9, Npgsql 10.0.3, EFCore.Design 10.0.9
+5. [x] **Configure PostgreSQL connection string** — `appsettings.json`, `appsettings.Development.json`, registered in `Program.cs`
 
-### Phase 2: Data Layer
-6. [ ] **Create EF Core entities** (`User`, `Vote`)
-7. [ ] **Set up `DramaMeterDbContext`** with Npgsql
-8. [ ] **Create first migration** and apply it
-9. [ ] **Write unit tests** for entities & DbContext (optional)
+### Phase 2: Data Layer ✅ COMPLETE
+6. [x] **Create EF Core entities** (`User`, `Vote`) — done as part of Phase 1
+7. [x] **Set up `DramaMeterDbContext`** with Npgsql — done as part of Phase 1
+8. [x] **Create first migration** and apply it — verified tables exist in PostgreSQL
+9. [x] **Write unit tests** for entities & DbContext (optional) — `UserTests`, `VoteTests`, `DramaMeterDbContextTests`
 
 ### Phase 3: Backend Services
 10. [ ] **`SessionService`**: Cookie-based UUID management

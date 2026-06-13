@@ -1,7 +1,10 @@
-﻿@page "/"
+﻿@inject  DramaMeterDbContext DbContext
+@page "/"
+@using Muddi.DramaMeter.Blazor.Data
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+@DbContext.Users.Count() users
