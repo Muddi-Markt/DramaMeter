@@ -23,11 +23,9 @@ footer {
 .title {
     color: #ffffff;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 28px;
     font-weight: 700;
     text-align: center;
     margin: 0 0 0.5rem 0;
-    letter-spacing: 0.5px;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 

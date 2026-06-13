@@ -48,8 +48,6 @@
     private ElementReference _svgRef;
     private double _scaleX = 1;
     private double _scaleY = 1;
-    private double _rectLeft = 0;
-    private double _rectTop = 0;
 
     private const double Cx = 220;
     private const double Cy = 180;
@@ -91,13 +89,9 @@
         // Get SVG display dimensions and element position once
         var size = await JS.InvokeAsync<double[]>(
             "dramaMeterHelpers.getSvgScale", _svgRef);
-        var rect = await JS.InvokeAsync<double[]>(
-            "dramaMeterHelpers.getBoundingClientRect", _svgRef);
 
         var w = size[0];
         var h = size[1];
-        _rectLeft = rect[0];
-        _rectTop = rect[1];
 
         if (w > 0 && h > 0)
         {
@@ -112,12 +106,14 @@
         // Convert client coordinates to SVG viewBox coordinates.
         // Using clientX/clientY relative to the element is reliable
         // for both mouse and touch events on mobile.
-        var cssX = e.ClientX - _rectLeft;
-        var cssY = e.ClientY - _rectTop;
-        if (cssY > 132)
-            return;
+        var cssX = e.OffsetX;
+        var cssY = e.OffsetY;
+
         var svgX = cssX * _scaleX;
         var svgY = cssY * _scaleY;
+
+        if (svgY > 182)
+            return;
 
         // Calculate angle from center: 180°=left, 90°=top, 0°=right
         var dx = svgX - Cx;

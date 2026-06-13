@@ -2,57 +2,52 @@
 @inject IVoteService VoteService
 @inject IResultService ResultService
 
-<PageTitle>Drama Meter</PageTitle>
+<PageTitle>MUDDI's Drama Meter</PageTitle>
 
 <div class="page">
-    @if (_isLoading)
-    {
-        <div class="loading">Loading drama meter…</div>
-    }
-    else
-    {
-        <h1 class="title">MUDDI's Drama Meter</h1>
 
-        <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
-        <Gauge DramaLevel="@_dramaLevel"
-               ShowNeedle="true"
-               LastVotePositions="@_lastVotePositions"
-               OnVoteRequested="HandleGaugeVote"/>
+    <div>
+        <h1 class="title">MUDDI's</h1>
+        <h2 class="title">Drama Meter</h2>
+    </div>
 
-        <footer>
-            <!-- Cooldown countdown -->
-            @if (_cooldownRemaining.HasValue)
-            {
-                <CooldownTimer Remaining="@_cooldownRemaining.Value"
-                               OnElapsed="OnCooldownElapsed"/>
-            }
+    <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
+    <Gauge DramaLevel="@_dramaLevel"
+           ShowNeedle="true"
+           LastVotePositions="@_lastVotePositions"
+           OnVoteRequested="HandleGaugeVote"/>
 
-            <!-- Delete vote -->
-            @if (_hasVoted)
-            {
-                <button class="delete-btn" @onclick="DeleteVote">Delete Vote</button>
-            }
+    <footer>
+        <!-- Cooldown countdown -->
+        @if (_cooldownRemaining.HasValue)
+        {
+            <CooldownTimer Remaining="@_cooldownRemaining.Value"
+                           OnElapsed="OnCooldownElapsed"/>
+        }
 
-            <!-- Total votes cast -->
-            @if (_dramaResult?.TotalVoteCount > 0)
-            {
-                <span class="vote-count">
-                @_dramaResult.TotalVoteCount vote@(_dramaResult.TotalVoteCount == 1 ? "" : "s") cast
+        <!-- Delete vote -->
+        @if (_hasVoted)
+        {
+            <button class="delete-btn" @onclick="DeleteVote">Lösche dein Vote</button>
+        }
+
+        <!-- Total votes cast -->
+        @if (_dramaResult?.TotalVoteCount > 0)
+        {
+            <span class="vote-count">
+                @_dramaResult.TotalVoteCount vote@(_dramaResult.TotalVoteCount == 1 ? "" : "s")
             </span>
-            }
-        </footer>
-    }
+        }
+    </footer>
 </div>
 
 @code {
     private DramaResult? _dramaResult;
-    private bool _isLoading = true;
+
     private bool _hasVoted;
     private TimeSpan? _cooldownRemaining;
     private double _dramaLevel;
-    private List<(double X, double Y)> _lastVotePositions = new();
-
-    private bool _isCooldown => _cooldownRemaining.HasValue;
+    private List<(double X, double Y)> _lastVotePositions = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,8 +63,6 @@
         var lastVote = await VoteService.GetUserLastVoteAsync();
         _hasVoted = lastVote != null;
         _cooldownRemaining = VoteService.GetCooldownRemaining(lastVote?.CreatedAt);
-        _isLoading = false;
-        StateHasChanged();
     }
 
     private async Task HandleGaugeVote((int level, double angle, double viewBoxX, double viewBoxY) args)
