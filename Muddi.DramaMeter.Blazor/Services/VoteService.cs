@@ -66,11 +66,11 @@ public class VoteService(
 		if (lastVote is not null)
 		{
 			var elapsed = DateTime.UtcNow - lastVote.CreatedAt;
+#if !DEBUG
 			if (elapsed < CooldownPeriod)
-			{
 				throw new InvalidOperationException(
 					$"You must wait {CooldownPeriod.TotalMinutes} minutes between votes.");
-			}
+#endif
 		}
 
 		var vote = new Vote

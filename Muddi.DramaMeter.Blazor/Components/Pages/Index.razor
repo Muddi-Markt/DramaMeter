@@ -1,6 +1,8 @@
 @page "/"
 @inject IVoteService VoteService
 @inject IResultService ResultService
+@inject ILogger<Index> Logger
+@inject IJSRuntime JsRuntime
 
 <PageTitle>MUDDI's Drama Meter</PageTitle>
 
@@ -78,9 +80,17 @@
         {
             await VoteService.SubmitVoteAsync(args.level, args.viewBoxX, args.viewBoxY);
         }
-        catch (InvalidOperationException)
+        catch (Exception ex)
         {
-            // Already in cooldown — just refresh state
+            if (ex is ArgumentException or InvalidOperationException)
+            {
+                Logger.LogInformation("Click was not updated: {ErrorMessage}", ex.Message);
+                await JsRuntime.InvokeVoidAsync("console.log", "Failed to update click: " + ex.Message);
+                return;
+            }
+
+            Logger.LogError(ex, "Failed to update click");
+            await JsRuntime.InvokeVoidAsync("console.error", "Failed to update click: " + ex.Message);
         }
 
         await LoadAsync();

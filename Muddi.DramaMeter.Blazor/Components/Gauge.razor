@@ -3,15 +3,25 @@
 <svg @ref="_svgRef" viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge"
      @onclick="OnGaugeClick">
 
+    <defs>
+        <!-- Define the half-circle clipping boundary -->
+        <clipPath id="half-clip">
+            <rect x="0" y="0" width="440" height="180"/>
+        </clipPath>
+    </defs>
+
     @* Needle pivot shadow *@
-    <circle cx="@Cx" cy="@Cy" r="@InnerR + 5" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <circle cx="@Cx" cy="@Cy" r="@(InnerR)" fill="rgba(0,0,0,.15)" stroke="rgba(0,0,0,.15)" stroke-width="5"
+            clip-path="url(#half-clip)"/>
 
     @* 4 colored arc segments *@
     @for (int i = 0; i < 4; i++)
     {
         var startAngle = 180 - i * 45.0;
         var endAngle = 180 - (i + 1) * 45.0;
-        <path d="@GetArcPath(startAngle, endAngle)" fill="@Colors[i]" class="gauge-segment"/>
+        <path d="@GetArcPath(startAngle, endAngle)"
+              fill="@Colors[i]"
+              class="gauge-segment"/>
     }
 
     @* Animated needle *@
@@ -24,10 +34,8 @@
         </g>
 
         @* Last 10 vote dots — rendered directly inside this SVG *@
-        @if (LastVotePositions is not null && LastVotePositions.Any())
-        {
-            <LastVotes Positions="@LastVotePositions"/>
-        }
+
+        <LastVotes Positions="@LastVotePositions"/>
     }
 
     @* Segment labels — raw HTML since <text> is Razor-reserved *@
@@ -36,9 +44,12 @@
         var midAngle = 180 - (i + 0.5) * 45.0;
         var lx = Cx + LabelR * Math.Cos(midAngle * Math.PI / 180);
         var ly = Cy - LabelR * Math.Sin(midAngle * Math.PI / 180);
-        <text>
+        <text> @* dobule text is needed for blazor *@
             <text x="@lx" y="@ly" text-anchor="middle" dominant-baseline="middle"
-                  class="gauge-label">@Labels[i]</text></text>
+                  class="gauge-label">
+                @Labels[i]
+            </text>
+        </text>
     }
 
 

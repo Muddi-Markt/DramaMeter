@@ -5,13 +5,13 @@
 }
 
 .gauge-segment {
-    stroke: rgba(255, 255, 255, 0.15);
-    stroke-width: 1;
-    transition: opacity 0.2s ease;
+    stroke: rgba(0, 0, 0, 0.15);
+    stroke-width: 2px;
+    transition: stroke 0.5s ease;
 }
 
 .gauge-segment:hover {
-    opacity: 0.85;
+    stroke: rgba(255, 255, 255, 0.85);
 }
 
 .gauge-label {
