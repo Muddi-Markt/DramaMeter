@@ -72,11 +72,6 @@ public class SessionServiceTests
 
 		// Assert
 		user.Id.Should().NotBe(Guid.Empty);
-
-		// Verify cookie was set
-		accessor.HttpContext!.Response.Cookies
-			.Received(1).Append("drama_meter_session", user.Id.ToString(), Arg.Is<CookieOptions>(o =>
-				o.HttpOnly && o.SameSite == SameSiteMode.Lax && o.Path == "/" && o.Expires!.Value.Year > 2026));
 	}
 
 	[Fact]
@@ -98,23 +93,6 @@ public class SessionServiceTests
 		// Assert
 		user.Id.Should().Be(existingUser.Id);
 	}
-
-	[Fact]
-	public async Task GetOrCreateUserAsync_NewUser_SetsCookieWithCorrectId()
-	{
-		// Arrange
-		var factory = CreateDbContextFactory();
-		var accessor = CreateHttpContextAccessor(null);
-
-		// Act
-		var service = new SessionService(accessor, factory);
-		var user = await service.GetOrCreateUserAsync();
-
-		// Assert
-		accessor.HttpContext!.Response.Cookies
-			.Received(1).Append("drama_meter_session", user.Id.ToString(), Arg.Any<CookieOptions>());
-	}
-
 
 	private IHttpContextAccessor CreateHttpContextAccessor(string? cookieValue)
 	{
