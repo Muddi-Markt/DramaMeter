@@ -1,22 +1,16 @@
-@inject ISessionService SessionService
 @foreach (var pos in Positions)
 {
     var fillColor =
-        pos.UserId == _myUserId
+        pos.UserId == CurrentUser.Id
             ? "#5a5aAa"
             : "#1a1a1a";
-    <circle class="vote-dot" cx="@pos.X" cy="@pos.Y" fill="@fillColor" r="4"/>
+    <circle class="vote-dot" cx="@pos.X" cy="@pos.Y" fill="@fillColor" r="4" opacity="@pos.Weight"/>
 }
 
 
 @code {
     [EditorRequired] [Parameter] public required List<UserPoint> Positions { get; set; }
-
-    Guid _myUserId;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _myUserId = (await SessionService.GetOrCreateUserAsync()).Id;
-    }
+    [CascadingParameter] public required User CurrentUser { get; set; }
+}
 
 }

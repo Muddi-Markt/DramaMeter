@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Muddi.DramaMeter.Blazor.Data;
+using Muddi.DramaMeter.Blazor.Models;
 
 namespace Muddi.DramaMeter.Blazor.Services;
 
@@ -24,7 +25,7 @@ public class DramaResult
 	public List<UserPoint> ClickPositions { get; set; } = [];
 }
 
-public readonly record struct UserPoint(Guid UserId, double X, double Y);
+public readonly record struct UserPoint(Guid UserId, double X, double Y, double Weight, int Level);
 
 public interface IResultService
 {
@@ -63,11 +64,19 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
 			TotalVoteCount = votes.Count
 		};
 
-		// Get the last 10 votes for display (including older ones beyond 7 days)
+
+		// Get the last 100 votes for display (including older ones beyond 7 days)
 		var lastVotes = await dbContext.Votes
 			.OrderByDescending(v => v.CreatedAt)
-			.Take(10)
-			.Select(v => new UserPoint(v.User.Id, v.ClickViewBoxX, v.ClickViewBoxY))
+			.Take(100)
+			.Select(v => new UserPoint(
+				v.User.Id,
+				v.ClickViewBoxX,
+				v.ClickViewBoxY,
+				v.CreatedAt > cutoff
+					? Math.Exp(-Lambda * (now - v.CreatedAt).TotalDays)
+					: 0.0, v.Level)
+			)
 			.ToListAsync(cancellationToken);
 
 		dramaResult.ClickPositions = lastVotes;
@@ -93,5 +102,26 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
 
 		dramaResult.DramaLevel = weightSum > 0 ? weightedSum / weightSum : 0.0;
 		return dramaResult;
+	}
+
+	public async Task CreateDummies()
+	{
+		var user = dbContext.Users.FirstOrDefault();
+		if (user is null)
+			return;
+
+		for (var i = 0; i < 100; i++)
+		{
+			dbContext.Votes.Add(new Vote
+			{
+				User = user,
+				Level = Random.Shared.Next(0, 4),
+				ClickViewBoxX = Math.Round(Random.Shared.NextDouble() * 180.0),
+				ClickViewBoxY = Math.Round(Random.Shared.NextDouble() * 180.0),
+				CreatedAt = DateTime.UtcNow.AddMinutes((100 - i) * -100)
+			});
+		}
+
+		await dbContext.SaveChangesAsync();
 	}
 }

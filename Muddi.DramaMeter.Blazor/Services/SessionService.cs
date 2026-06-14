@@ -11,31 +11,38 @@ public interface ISessionService
 	Task<User> GetOrCreateUserAsync();
 }
 
-public class SessionService(
-	IHttpContextAccessor httpContextAccessor,
-	DramaMeterDbContext dbContext) : ISessionService
+public class SessionService(IHttpContextAccessor httpContextAccessor, DramaMeterDbContext dbContext) : ISessionService
 {
 	private const string CookieName = "drama_meter_session";
 	private const int CookieDays = 365;
+	private readonly SemaphoreSlim _semaphore = new(1, 1);
 
 	public async Task<User> GetOrCreateUserAsync()
 	{
-		var userId = GetSessionCookie();
-
-		User? user = null;
-		if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var guid))
-			user = await dbContext.Users.FindAsync(guid);
-
-		if (user is null)
+		await _semaphore.WaitAsync();
+		try
 		{
+			var userId = GetSessionCookie();
+
+			User? user = null;
+			if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var guid))
+				user = await dbContext.Users.FindAsync(guid);
+
+			if (user is not null)
+				return user;
+
 			user = new User();
 			dbContext.Users.Add(user);
 			await dbContext.SaveChangesAsync();
 
 			SetSessionCookie(user.Id);
-		}
 
-		return user;
+			return user;
+		}
+		finally
+		{
+			_semaphore.Release();
+		}
 	}
 
 	private string? GetSessionCookie()

@@ -1,8 +1,21 @@
 ﻿@inherits LayoutComponentBase
+@inject ISessionService SessionService
+
+@code {
+    public User CurrentUser { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = await SessionService.GetOrCreateUserAsync();
+    }
+
+}
 
 <div class="main-layout">
     <main class="main-content">
-        @Body
+        <CascadingValue Value="CurrentUser" IsFixed="true">
+            @Body
+        </CascadingValue>
     </main>
 </div>
 

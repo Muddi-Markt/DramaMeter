@@ -11,7 +11,7 @@ public interface IVoteService
 	///     Submit a vote with the clicked level and click position.
 	///     Throws <see cref="InvalidOperationException" /> if the user is still in cooldown.
 	/// </summary>
-	Task SubmitVoteAsync(int level, double viewBoxX, double viewBoxY, CancellationToken cancellationToken = default);
+	Task SubmitVoteAsync(UserPoint userPoint, CancellationToken ct = default);
 
 	/// <summary>
 	///     Delete the current user's most recent vote.
@@ -52,26 +52,28 @@ public class VoteService : IVoteService
 		_settings = settings.Value;
 	}
 
-	public async Task SubmitVoteAsync(int level, double viewBoxX, double viewBoxY,
-		CancellationToken cancellationToken = default)
+	public async Task SubmitVoteAsync(UserPoint userPoint,
+		CancellationToken ct = default)
 	{
 		// Validate level
-		if (level is < 0 or > 3)
-			throw new ArgumentOutOfRangeException(nameof(level), "Level must be between 0 and 3.");
+		if (userPoint.Level is < 0 or > 3)
+			throw new ArgumentOutOfRangeException(nameof(userPoint), "Level must be between 0 and 3.");
 
 		// Validate click angle
 
 		// Validate viewBox coordinates
-		if (viewBoxX is < 0 or > 440 || viewBoxY is < 0 or > 180)
-			throw new ArgumentOutOfRangeException(nameof(viewBoxX),
+		if (userPoint.X is < 0 or > 440 || userPoint.Y is < 0 or > 180)
+			throw new ArgumentOutOfRangeException(nameof(userPoint),
 				"Click position must be within the gauge SVG bounds.");
 
-		var user = await _sessionService.GetOrCreateUserAsync();
+		var user = await _dbContext.Users.FindAsync([userPoint.UserId], ct);
+		if (user is null)
+			throw new KeyNotFoundException("User not found: " + userPoint.UserId);
 
 		var lastVote = await _dbContext.Votes
 			.Where(v => v.User.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
-			.FirstOrDefaultAsync(cancellationToken);
+			.FirstOrDefaultAsync(ct);
 
 		if (lastVote is not null)
 		{
@@ -84,12 +86,12 @@ public class VoteService : IVoteService
 		var vote = new Vote
 		{
 			User = user,
-			Level = level,
-			ClickViewBoxX = viewBoxX,
-			ClickViewBoxY = viewBoxY
+			Level = userPoint.Level,
+			ClickViewBoxX = userPoint.X,
+			ClickViewBoxY = userPoint.Y
 		};
 		_dbContext.Votes.Add(vote);
-		await _dbContext.SaveChangesAsync(cancellationToken);
+		await _dbContext.SaveChangesAsync(ct);
 	}
 
 	public async Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default)

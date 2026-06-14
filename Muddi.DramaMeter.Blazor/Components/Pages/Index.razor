@@ -74,13 +74,17 @@
 
         _cooldownRemaining = VoteService.GetCooldownRemaining(lastVote?.CreatedAt);
         _hasVoted = _cooldownRemaining.HasValue;
+#if DEBUG
+        if (_dramaResult.TotalVoteCount == 0)
+            await ((ResultService)ResultService).CreateDummies();
+#endif
     }
 
-    private async Task HandleGaugeVote((int level, double angle, double viewBoxX, double viewBoxY) args)
+    private async Task HandleGaugeVote(UserPoint userPoint)
     {
         try
         {
-            await VoteService.SubmitVoteAsync(args.level, args.viewBoxX, args.viewBoxY);
+            await VoteService.SubmitVoteAsync(userPoint);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {

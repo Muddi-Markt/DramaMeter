@@ -1,5 +1,4 @@
-@using Microsoft.Extensions.Options
-@inject IJSRuntime JS
+@inject IJSRuntime JsRuntime
 @inject IOptions<DramaMeterSettings> Settings
 
 <svg @ref="_svgRef" viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge"
@@ -35,7 +34,7 @@
             <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
         </g>
 
-        @* Last 10 vote dots — rendered directly inside this SVG *@
+        @* Last 100 vote dots — rendered directly inside this SVG *@
 
         <LastVotes Positions="@LastVotePositions"/>
     }
@@ -58,6 +57,7 @@
 </svg>
 
 @code {
+    [CascadingParameter] public required User CurrentUser { get; set; }
     private ElementReference _svgRef;
     private double _scaleX = 1;
     private double _scaleY = 1;
@@ -69,9 +69,8 @@
     private const double LabelR = 168;
     private const double NeedleLen = 115;
 
-    private static readonly string[] _colors = { "#4caf50", "#fdd835", "#ff9800", "#c62828" };
+    private static string[] Colors { get; } = ["#4caf50", "#fdd835", "#ff9800", "#c62828"];
 
-    private string[] Colors => _colors;
     private string[] Labels => Settings.Value.GaugeLabels;
 
     [Parameter] public DramaResult? Result { get; set; }
@@ -83,10 +82,11 @@
     ///     Fired when the user clicks on the gauge.
     /// </summary>
     [Parameter]
-    public EventCallback<(int level, double angle, double viewBoxX, double viewBoxY)> OnVoteRequested { get; set; }
+    public EventCallback<UserPoint> OnVoteRequested { get; set; }
 
     private double NeedleAngle => DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -99,7 +99,7 @@
     private async Task GetCurrentScaleAsync()
     {
         // Get SVG display dimensions and element position once
-        var size = await JS.InvokeAsync<double[]>(
+        var size = await JsRuntime.InvokeAsync<double[]>(
             "dramaMeterHelpers.getSvgScale", _svgRef);
 
         var w = size[0];
@@ -135,7 +135,9 @@
         // Map angle to level: 180→0, 135→1, 90→2, 45→3, 0→3
         var level = Math.Min(3, (int)((180 - angle) / 45));
 
-        _ = OnVoteRequested.InvokeAsync((level, angle, svgX, svgY));
+        var userPoint = new UserPoint(CurrentUser.Id, svgX, svgY, 1.0, level);
+
+        _ = OnVoteRequested.InvokeAsync(userPoint);
     }
 
     private string GetArcPath(double startAngle, double endAngle)

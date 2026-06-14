@@ -143,7 +143,7 @@ public class ResultServiceTests
 	}
 
 	[Fact]
-	public async Task GetDramaResultAsync_ClickPositions_ReturnsUpToTen()
+	public async Task GetDramaResultAsync_ClickPositions_ReturnsUpToHundret()
 	{
 		// Arrange
 		var db = CreateDbContext();
@@ -151,7 +151,7 @@ public class ResultServiceTests
 		db.Users.Add(user);
 		db.SaveChanges();
 
-		for (var i = 0; i < 15; i++)
+		for (var i = 0; i < 150; i++)
 			db.Votes.Add(new Vote
 			{
 				User = user,
@@ -170,7 +170,7 @@ public class ResultServiceTests
 
 		// Assert — most recent (i=0) is first
 		result.ClickPositions.Should().NotBeNull();
-		result.ClickPositions!.Count.Should().Be(10);
+		result.ClickPositions!.Count.Should().Be(100);
 		result.ClickPositions[0].X.Should().Be(90); // i=0: 90 + 0*20
 		result.ClickPositions[0].Y.Should().Be(50); // i=0: 50 + 0*5
 		result.ClickPositions[9].X.Should().Be(270); // i=9: 90 + 9*20
