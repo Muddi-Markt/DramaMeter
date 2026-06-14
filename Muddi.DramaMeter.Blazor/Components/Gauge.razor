@@ -48,7 +48,7 @@
         var ly = Cy - LabelR * Math.Sin(midAngle * Math.PI / 180);
         <text> @* dobule text is needed for blazor *@
             <text x="@lx" y="@ly" text-anchor="middle" dominant-baseline="middle"
-                  class="gauge-label">
+                  class="gauge-label@(i == CurrentLevelIndex ? " gauge-label--active" : "")">
                 @Labels[i]
             </text>
         </text>
@@ -87,6 +87,7 @@
 
     private double NeedleAngle => !ShowResults ? -90.0 : DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
+    private int CurrentLevelIndex => !ShowResults ? -1 : Math.Min(3, (int)Math.Round(DramaLevel));
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
