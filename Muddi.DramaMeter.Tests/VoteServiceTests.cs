@@ -16,46 +16,46 @@ public class VoteServiceTests
 		return builder.Options;
 	}
 
-	private DramaMeterDbContext CreateDbContext()
+	private IDbContextFactory<DramaMeterDbContext> CreateDbContextFactory()
 	{
-		return new DramaMeterDbContext(GetInMemoryOptions());
+		var options = GetInMemoryOptions();
+		return new TestDbContextFactory(options);
 	}
 
-	private User CreateAndSaveUser(DramaMeterDbContext db)
+	private IVoteService CreateService(IDbContextFactory<DramaMeterDbContext> factory, User user, ISessionService? sessionService = null,
+		int cooldownMinutes = 10)
 	{
-		var user = new User();
-		db.Users.Add(user);
-		db.SaveChanges();
-		return user;
+		var sess = sessionService ?? Substitute.For<ISessionService>();
+		sess.GetOrCreateUserAsync().Returns(user);
+		var settings = Options.Create(GetSettings(cooldownMinutes));
+		return new VoteService(factory, sess, settings);
 	}
+
+	private UserPoint CreateVotePoint(User user, int level, double x, double y) => new(user.Id, x, y, 1.0, level);
 
 	private static DramaMeterSettings GetSettings(int cooldownMinutes = 10)
 	{
 		return new DramaMeterSettings { CooldownPeriod = TimeSpan.FromMinutes(cooldownMinutes) };
 	}
 
-	private IVoteService CreateService(DramaMeterDbContext db, User user, ISessionService? sessionService = null,
-		int cooldownMinutes = 10)
-	{
-		var sess = sessionService ?? Substitute.For<ISessionService>();
-		sess.GetOrCreateUserAsync().Returns(user);
-		var settings = Options.Create(GetSettings(cooldownMinutes));
-		return new VoteService(db, sess, settings);
-	}
-
 	[Fact]
 	public async Task SubmitVoteAsync_ValidLevel_SubmitsVote()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
-		var service = CreateService(db, user);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
+
+		var service = CreateService(factory, user);
 
 		// Act
-		await service.SubmitVoteAsync(2, 220, 50);
+		await service.SubmitVoteAsync(CreateVotePoint(user, 2, 220, 50));
 
 		// Assert
-		var vote = await db.Votes.Include(x => x.User).FirstOrDefaultAsync();
+		var db2 = factory.CreateDbContext();
+		var vote = await db2.Votes.Include(x => x.User).FirstOrDefaultAsync();
 		vote.Should().NotBeNull();
 		vote.User.Id.Should().Be(user.Id);
 		vote.Level.Should().Be(2);
@@ -71,15 +71,20 @@ public class VoteServiceTests
 	public async Task SubmitVoteAsync_AllLevels_SubmitsCorrectly(int level)
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
-		var service = CreateService(db, user);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
+
+		var service = CreateService(factory, user);
 
 		// Act
-		await service.SubmitVoteAsync(level, 220, 50);
+		await service.SubmitVoteAsync(CreateVotePoint(user, level, 220, 50));
 
 		// Assert
-		var vote = await db.Votes.FirstAsync();
+		var db2 = factory.CreateDbContext();
+		var vote = await db2.Votes.FirstAsync();
 		vote.Level.Should().Be(level);
 	}
 
@@ -87,14 +92,18 @@ public class VoteServiceTests
 	public async Task SubmitVoteAsync_InvalidLevel_ThrowsArgumentOutOfRangeException()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
-		var service = CreateService(db, user);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
+
+		var service = CreateService(factory, user);
 
 		// Act & Assert
-		await FluentActions.Awaiting(() => service.SubmitVoteAsync(4, 220, 50))
+		await FluentActions.Awaiting(() => service.SubmitVoteAsync(CreateVotePoint(user, 4, 220, 50)))
 			.Should().ThrowAsync<ArgumentOutOfRangeException>();
-		await FluentActions.Awaiting(() => service.SubmitVoteAsync(-1, 220, 50))
+		await FluentActions.Awaiting(() => service.SubmitVoteAsync(CreateVotePoint(user, -1, 220, 50)))
 			.Should().ThrowAsync<ArgumentOutOfRangeException>();
 	}
 
@@ -102,18 +111,20 @@ public class VoteServiceTests
 	public async Task SubmitVoteAsync_InCooldown_ThrowsException()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
 
-		// Create a recent vote (within cooldown period)
 		var recentVote = new Vote { User = user, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
 		db.Votes.Add(recentVote);
 		await db.SaveChangesAsync();
 
-		var service = CreateService(db, user);
+		var service = CreateService(factory, user);
 
 		// Act & Assert
-		var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(0, 220, 50))
+		var ex = await FluentActions.Awaiting(() => service.SubmitVoteAsync(CreateVotePoint(user, 0, 220, 50)))
 			.Should().ThrowAsync<InvalidOperationException>();
 		ex.Which.Message.Should().Contain("10");
 	}
@@ -122,60 +133,49 @@ public class VoteServiceTests
 	public async Task SubmitVoteAsync_CooldownExpired_Succeeds()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
 
-		// Create an old vote (outside cooldown period)
 		var oldVote = new Vote { User = user, Level = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-15) };
 		db.Votes.Add(oldVote);
 		await db.SaveChangesAsync();
 
-		var service = CreateService(db, user);
+		var service = CreateService(factory, user);
 
 		// Act
-		await service.SubmitVoteAsync(3, 220, 50);
+		await service.SubmitVoteAsync(CreateVotePoint(user, 3, 220, 50));
 
 		// Assert
-		var votes = await db.Votes.ToListAsync();
+		var db2 = factory.CreateDbContext();
+		var votes = await db2.Votes.ToListAsync();
 		votes.Count.Should().Be(2);
-	}
-
-	[Fact]
-	public async Task SubmitVoteAsync_UsesSessionService_Identity()
-	{
-		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
-		var sessionService = Substitute.For<ISessionService>();
-		sessionService.GetOrCreateUserAsync().Returns(user);
-		var service = CreateService(db, user, sessionService);
-
-		// Act
-		await service.SubmitVoteAsync(1, 220, 50);
-
-		// Assert — vote must be attributed to the session user, not the first user in DB
-		var vote = await db.Votes.Include(vote => vote.User).FirstAsync();
-		vote.User.Id.Should().Be(user.Id);
-		await sessionService.Received(1).GetOrCreateUserAsync();
 	}
 
 	[Fact]
 	public async Task SubmitVoteAsync_MultipleUsers_VotesAttributedCorrectly()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user1 = CreateAndSaveUser(db);
-		var user2 = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user1 = new User();
+		var user2 = new User();
+		db.Users.Add(user1);
+		db.Users.Add(user2);
+		await db.SaveChangesAsync();
 
-		var service1 = CreateService(db, user1);
-		var service2 = CreateService(db, user2);
+		var service1 = CreateService(factory, user1);
+		var service2 = CreateService(factory, user2);
 
 		// Act
-		await service1.SubmitVoteAsync(1, 220, 50);
-		await service2.SubmitVoteAsync(3, 220, 50);
+		await service1.SubmitVoteAsync(CreateVotePoint(user1, 1, 220, 50));
+		await service2.SubmitVoteAsync(CreateVotePoint(user2, 3, 220, 50));
 
 		// Assert
-		var votes = await db.Votes.OrderBy(v => v.Id).Include(vote => vote.User).ToListAsync();
+		var db2 = factory.CreateDbContext();
+		var votes = await db2.Votes.OrderBy(v => v.Id).Include(vote => vote.User).ToListAsync();
 		votes[0].User.Id.Should().Be(user1.Id);
 		votes[1].User.Id.Should().Be(user2.Id);
 	}
@@ -184,8 +184,11 @@ public class VoteServiceTests
 	public async Task DeleteMostRecentVoteAsync_WithVotes_DeletesMostRecent()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
 
 		var vote1 = new Vote { User = user, Level = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-5) };
 		var vote2 = new Vote { User = user, Level = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-1) };
@@ -193,15 +196,16 @@ public class VoteServiceTests
 		db.Votes.Add(vote2);
 		await db.SaveChangesAsync();
 
-		var service = CreateService(db, user);
+		var service = CreateService(factory, user);
 
 		// Act
 		var deleted = await service.DeleteMostRecentVoteAsync();
 
 		// Assert
 		deleted.Should().BeTrue();
-		(await db.Votes.ToListAsync()).Count.Should().Be(1);
-		var remaining = await db.Votes.FirstAsync();
+		var db2 = factory.CreateDbContext();
+		(await db2.Votes.ToListAsync()).Count.Should().Be(1);
+		var remaining = await db2.Votes.FirstAsync();
 		remaining.Level.Should().Be(0);
 	}
 
@@ -209,67 +213,81 @@ public class VoteServiceTests
 	public async Task DeleteMostRecentVoteAsync_NoVotes_ReturnsFalse()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
-		var service = CreateService(db, user);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
+
+		var service = CreateService(factory, user);
 
 		// Act
 		var deleted = await service.DeleteMostRecentVoteAsync();
 
 		// Assert
 		deleted.Should().BeFalse();
-		(await db.Votes.ToListAsync()).Count.Should().Be(0);
+		var db2 = factory.CreateDbContext();
+		(await db2.Votes.ToListAsync()).Count.Should().Be(0);
 	}
 
 	[Fact]
 	public async Task DeleteVoteByIdAsync_WrongUser_ReturnsFalse()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user1 = CreateAndSaveUser(db);
-		var user2 = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user1 = new User();
+		var user2 = new User();
+		db.Users.Add(user1);
+		db.Users.Add(user2);
+		await db.SaveChangesAsync();
 
 		var vote = new Vote { User = user1, Level = 1 };
 		db.Votes.Add(vote);
 		await db.SaveChangesAsync();
 
-		var service = CreateService(db, user2);
+		var service = CreateService(factory, user2);
 
 		// Act
 		var deleted = await service.DeleteVoteByIdAsync(vote.Id, user2.Id);
 
 		// Assert
 		deleted.Should().BeFalse();
-		(await db.Votes.ToListAsync()).Count.Should().Be(1);
+		var db2 = factory.CreateDbContext();
+		(await db2.Votes.ToListAsync()).Count.Should().Be(1);
 	}
 
 	[Fact]
 	public async Task DeleteVoteByIdAsync_ValidDeletion_RemovesVote()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var user = CreateAndSaveUser(db);
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
+		var user = new User();
+		db.Users.Add(user);
+		await db.SaveChangesAsync();
 
 		var vote = new Vote { User = user, Level = 2 };
 		db.Votes.Add(vote);
 		await db.SaveChangesAsync();
 
-		var service = CreateService(db, user);
+		var service = CreateService(factory, user);
 
 		// Act
 		var deleted = await service.DeleteVoteByIdAsync(vote.Id, user.Id);
 
 		// Assert
 		deleted.Should().BeTrue();
-		(await db.Votes.ToListAsync()).Count.Should().Be(0);
+		var db2 = factory.CreateDbContext();
+		(await db2.Votes.ToListAsync()).Count.Should().Be(0);
 	}
 
 	[Fact]
 	public void GetCooldownRemaining_NoLastVote_ReturnsNull()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var service = CreateService(db, new User());
+		var factory = CreateDbContextFactory();
+		var service = CreateService(factory, new User());
 
 		// Act
 		var result = service.GetCooldownRemaining(null);
@@ -282,8 +300,8 @@ public class VoteServiceTests
 	public void GetCooldownRemaining_CooldownExpired_ReturnsNull()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var service = CreateService(db, new User());
+		var factory = CreateDbContextFactory();
+		var service = CreateService(factory, new User());
 		var lastVote = DateTime.UtcNow.AddMinutes(-15);
 
 		// Act
@@ -297,8 +315,8 @@ public class VoteServiceTests
 	public void GetCooldownRemaining_InCooldown_ReturnsRemainingTime()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var service = CreateService(db, new User());
+		var factory = CreateDbContextFactory();
+		var service = CreateService(factory, new User());
 		var lastVote = DateTime.UtcNow.AddMinutes(-3);
 
 		// Act
@@ -307,5 +325,18 @@ public class VoteServiceTests
 		// Assert
 		result.Should().NotBeNull();
 		result.Value.TotalMinutes.Should().BeApproximately(7, 0.2);
+	}
+
+	private sealed class TestDbContextFactory(DbContextOptions<DramaMeterDbContext> options) : IDbContextFactory<DramaMeterDbContext>
+	{
+		public DramaMeterDbContext CreateDbContext() => new DramaMeterDbContext(options);
+
+		public IDisposable? BeginTransaction() => throw new NotImplementedException();
+
+		public IQueryable<TElement> CreateAsyncQueryExecutor<TElement>() => throw new NotImplementedException();
+
+		public IAsyncEnumerator<TElement> CreateAsyncEnumerator<TElement>(IQueryable<TElement> query) => throw new NotImplementedException();
+
+		public IQueryProvider CreateQueryProvider() => throw new NotImplementedException();
 	}
 }

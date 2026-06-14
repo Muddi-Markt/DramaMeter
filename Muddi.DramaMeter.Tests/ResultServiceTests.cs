@@ -14,13 +14,15 @@ public class ResultServiceTests
 		return builder.Options;
 	}
 
-	private DramaMeterDbContext CreateDbContext()
+	private IDbContextFactory<DramaMeterDbContext> CreateDbContextFactory()
 	{
-		return new DramaMeterDbContext(GetInMemoryOptions());
+		var options = GetInMemoryOptions();
+		return new TestDbContextFactory(options);
 	}
 
-	private void AddUserAndVotes(DramaMeterDbContext db, params (int Level, TimeSpan AgeSince)[] votes)
+	private void AddUserAndVotes(IDbContextFactory<DramaMeterDbContext> factory, params (int Level, TimeSpan AgeSince)[] votes)
 	{
+		var db = factory.CreateDbContext();
 		var user = new User();
 		db.Users.Add(user);
 		db.SaveChanges();
@@ -40,8 +42,8 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_NoVotes_ReturnsZero()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		var service = new ResultService(db);
+		var factory = CreateDbContextFactory();
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -55,9 +57,9 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_AllNoDrama_ReturnsZero()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db, (0, TimeSpan.Zero), (0, TimeSpan.FromHours(1)));
-		var service = new ResultService(db);
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory, (0, TimeSpan.Zero), (0, TimeSpan.FromHours(1)));
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -70,9 +72,9 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_AllExtraordinary_ReturnsThree()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db, (3, TimeSpan.Zero), (3, TimeSpan.FromHours(1)));
-		var service = new ResultService(db);
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory, (3, TimeSpan.Zero), (3, TimeSpan.FromHours(1)));
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -85,14 +87,14 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_MixedLevels_ReturnsWeightedAverage()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db,
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory,
 			(0, TimeSpan.Zero), // No Drama - fresh vote, weight ~1.0
 			(3, TimeSpan.Zero), // Extraordinary - fresh vote, weight ~1.0
 			(1, TimeSpan.FromHours(1)),
 			(2, TimeSpan.FromHours(1))
 		);
-		var service = new ResultService(db);
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -106,14 +108,14 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_FreshVoteDominates_MostlyHigherValue()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db,
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory,
 			(3, TimeSpan.Zero), // Very fresh - dominates
 			(0, TimeSpan.FromDays(1)), // Older - less weight
 			(0, TimeSpan.FromDays(2)), // Older - even less
 			(0, TimeSpan.FromDays(3)) // Even older - very little
 		);
-		var service = new ResultService(db);
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -126,14 +128,14 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_OldVotes_ExcludedFromEWMA()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db,
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory,
 			(3, TimeSpan.Zero), // Fresh - included
 			(0, TimeSpan.FromDays(1)), // 1 day - included
 			(0, TimeSpan.FromDays(4)), // 4 days - included
 			(0, TimeSpan.FromDays(7.5)) // > 7 days - excluded from calculation
 		);
-		var service = new ResultService(db);
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -146,7 +148,8 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_ClickPositions_ReturnsUpToHundret()
 	{
 		// Arrange
-		var db = CreateDbContext();
+		var factory = CreateDbContextFactory();
+		var db = factory.CreateDbContext();
 		var user = new User();
 		db.Users.Add(user);
 		db.SaveChanges();
@@ -163,7 +166,7 @@ public class ResultServiceTests
 
 		await db.SaveChangesAsync();
 
-		var service = new ResultService(db);
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
@@ -181,17 +184,30 @@ public class ResultServiceTests
 	public async Task GetDramaResultAsync_DramaDriftsToZero_WhenNoVotesForLongTime()
 	{
 		// Arrange
-		var db = CreateDbContext();
-		AddUserAndVotes(db,
+		var factory = CreateDbContextFactory();
+		AddUserAndVotes(factory,
 			(3, TimeSpan.FromDays(8)),
 			(3, TimeSpan.FromDays(9))
 		);
-		var service = new ResultService(db);
+		var service = new ResultService(factory);
 
 		// Act
 		var result = await service.GetDramaResultAsync();
 
 		// Assert - all votes > 7 days old, so excluded from EWMA, result should be 0
 		result.DramaLevel.Should().Be(0.0);
+	}
+
+	private sealed class TestDbContextFactory(DbContextOptions<DramaMeterDbContext> options) : IDbContextFactory<DramaMeterDbContext>
+	{
+		public DramaMeterDbContext CreateDbContext() => new DramaMeterDbContext(options);
+
+		public IDisposable? BeginTransaction() => throw new NotImplementedException();
+
+		public IQueryable<TElement> CreateAsyncQueryExecutor<TElement>() => throw new NotImplementedException();
+
+		public IAsyncEnumerator<TElement> CreateAsyncEnumerator<TElement>(IQueryable<TElement> query) => throw new NotImplementedException();
+
+		public IQueryProvider CreateQueryProvider() => throw new NotImplementedException();
 	}
 }

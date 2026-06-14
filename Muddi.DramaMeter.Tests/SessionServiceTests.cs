@@ -53,15 +53,21 @@ public class SessionServiceTests
 		return builder.Options;
 	}
 
+	private IDbContextFactory<DramaMeterDbContext> CreateDbContextFactory()
+	{
+		var options = GetInMemoryOptions();
+		return new TestDbContextFactory(options);
+	}
+
 	[Fact]
 	public async Task GetOrCreateUserAsync_NoCookie_CreatesNewUser()
 	{
 		// Arrange
-		var context = CreateDbContext();
+		var factory = CreateDbContextFactory();
 		var accessor = CreateHttpContextAccessor(null);
 
 		// Act
-		var service = new SessionService(accessor, context);
+		var service = new SessionService(accessor, factory);
 		var user = await service.GetOrCreateUserAsync();
 
 		// Assert
@@ -77,15 +83,16 @@ public class SessionServiceTests
 	public async Task GetOrCreateUserAsync_ExistingCookie_ReturnsSameUser()
 	{
 		// Arrange
-		var context = CreateDbContext();
+		var factory = CreateDbContextFactory();
 		var existingUser = new User { Id = Guid.Parse("11111111-1111-1111-1111-111111111111") };
-		context.Users.Add(existingUser);
-		await context.SaveChangesAsync();
+		var db = factory.CreateDbContext();
+		db.Users.Add(existingUser);
+		await db.SaveChangesAsync();
 
 		var accessor = CreateHttpContextAccessor("11111111-1111-1111-1111-111111111111");
 
 		// Act
-		var service = new SessionService(accessor, context);
+		var service = new SessionService(accessor, factory);
 		var user = await service.GetOrCreateUserAsync();
 
 		// Assert
@@ -96,11 +103,11 @@ public class SessionServiceTests
 	public async Task GetOrCreateUserAsync_NewUser_SetsCookieWithCorrectId()
 	{
 		// Arrange
-		var context = CreateDbContext();
+		var factory = CreateDbContextFactory();
 		var accessor = CreateHttpContextAccessor(null);
 
 		// Act
-		var service = new SessionService(accessor, context);
+		var service = new SessionService(accessor, factory);
 		var user = await service.GetOrCreateUserAsync();
 
 		// Assert
@@ -108,12 +115,6 @@ public class SessionServiceTests
 			.Received(1).Append("drama_meter_session", user.Id.ToString(), Arg.Any<CookieOptions>());
 	}
 
-
-	private DramaMeterDbContext CreateDbContext()
-	{
-		var options = GetInMemoryOptions();
-		return new DramaMeterDbContext(options);
-	}
 
 	private IHttpContextAccessor CreateHttpContextAccessor(string? cookieValue)
 	{
@@ -140,5 +141,18 @@ public class SessionServiceTests
 		accessor.HttpContext.Returns(mockHttpContext);
 
 		return accessor;
+	}
+
+	private sealed class TestDbContextFactory(DbContextOptions<DramaMeterDbContext> options) : IDbContextFactory<DramaMeterDbContext>
+	{
+		public DramaMeterDbContext CreateDbContext() => new DramaMeterDbContext(options);
+
+		public IDisposable? BeginTransaction() => throw new NotImplementedException();
+
+		public IQueryable<TElement> CreateAsyncQueryExecutor<TElement>() => throw new NotImplementedException();
+
+		public IAsyncEnumerator<TElement> CreateAsyncEnumerator<TElement>(IQueryable<TElement> query) => throw new NotImplementedException();
+
+		public IQueryProvider CreateQueryProvider() => throw new NotImplementedException();
 	}
 }
