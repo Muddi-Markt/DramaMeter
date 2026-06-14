@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="Muddi.DramaMeter.Blazor/Muddi.DramaMeter.Blazor.csproj" />
-  <Project Path="Muddi.DramaMeter.Tests/Muddi.DramaMeter.Tests.csproj" />
+	<Project Path="Muddi.DramaMeter.Blazor/Muddi.DramaMeter.Blazor.csproj"/>
+	<Project Path="Muddi.DramaMeter.Tests/Muddi.DramaMeter.Tests.csproj"/>
 </Solution>

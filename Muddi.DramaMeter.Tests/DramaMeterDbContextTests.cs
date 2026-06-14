@@ -54,10 +54,8 @@ public class DramaMeterDbContextTests
 		ctx.Users.Add(user);
 		ctx.SaveChanges();
 
-		for (int i = 0; i < 5; i++)
-		{
+		for (var i = 0; i < 5; i++)
 			ctx.Votes.Add(new Vote { User = user, Level = i % 4 });
-		}
 
 		ctx.SaveChanges();
 

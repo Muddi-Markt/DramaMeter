@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
 using Muddi.DramaMeter.Blazor.Components;
 using Muddi.DramaMeter.Blazor.Data;
 using Muddi.DramaMeter.Blazor.Services;
@@ -15,7 +14,7 @@ builder.Services.AddHttpContextAccessor();
 
 // Register DbContext with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DramaMeter")
-	?? throw new InvalidOperationException("Connection string 'DramaMeter' not found.");
+                       ?? throw new InvalidOperationException("Connection string 'DramaMeter' not found.");
 builder.Services.AddDbContext<DramaMeterDbContext>(options =>
 	options.UseNpgsql(connectionString));
 
@@ -29,7 +28,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-	app.UseExceptionHandler("/Error", createScopeForErrors: true);
+	app.UseExceptionHandler("/Error", true);
 	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
@@ -42,8 +41,8 @@ app.UseAntiforgery();
 // Apply pending migrations on startup
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<DramaMeterDbContext>();
-    db.Database.Migrate();
+	var db = scope.ServiceProvider.GetRequiredService<DramaMeterDbContext>();
+	db.Database.Migrate();
 }
 
 app.MapStaticAssets();

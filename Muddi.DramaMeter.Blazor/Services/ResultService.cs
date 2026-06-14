@@ -4,22 +4,22 @@ using Muddi.DramaMeter.Blazor.Data;
 namespace Muddi.DramaMeter.Blazor.Services;
 
 /// <summary>
-/// Represents the result of an EWMA calculation.
+///     Represents the result of an EWMA calculation.
 /// </summary>
 public class DramaResult
 {
 	/// <summary>
-	/// The EWMA drama level (0.0 to 3.0).
+	///     The EWMA drama level (0.0 to 3.0).
 	/// </summary>
 	public double DramaLevel { get; set; }
 
 	/// <summary>
-	/// The number of votes included in the EWMA calculation (votes within the last 7 days).
+	///     The number of votes included in the EWMA calculation (votes within the last 7 days).
 	/// </summary>
 	public int TotalVoteCount { get; set; }
 
 	/// <summary>
-	/// The actual click positions (viewBox coords) of the last 10 votes, ordered by most recent first.
+	///     The actual click positions (viewBox coords) of the last 10 votes, ordered by most recent first.
 	/// </summary>
 	public List<UserPoint> ClickPositions { get; set; } = [];
 }
@@ -29,7 +29,7 @@ public readonly record struct UserPoint(Guid UserId, double X, double Y);
 public interface IResultService
 {
 	/// <summary>
-	/// Calculates the current drama level using EWMA (Exponentially Weighted Moving Average).
+	///     Calculates the current drama level using EWMA (Exponentially Weighted Moving Average).
 	/// </summary>
 	Task<DramaResult> GetDramaResultAsync(CancellationToken cancellationToken = default);
 }
@@ -37,13 +37,13 @@ public interface IResultService
 public class ResultService(DramaMeterDbContext dbContext) : IResultService
 {
 	/// <summary>
-	/// Decay rate: after 3 days, weight drops to ~5%.
-	/// e^(-λ × 3) = 0.05 → λ ≈ 0.998 → rounded to 1.0
+	///     Decay rate: after 3 days, weight drops to ~5%.
+	///     e^(-λ × 3) = 0.05 → λ ≈ 0.998 → rounded to 1.0
 	/// </summary>
 	private const double Lambda = 0.998;
 
 	/// <summary>
-	/// Votes older than this have negligible weight (lower than 0.01%) and are excluded from calculation.
+	///     Votes older than this have negligible weight (lower than 0.01%) and are excluded from calculation.
 	/// </summary>
 	private static readonly TimeSpan MaxRelevantAge = TimeSpan.FromDays(7);
 
@@ -79,8 +79,8 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
 		}
 
 		// Calculate EWMA
-		double weightedSum = 0.0;
-		double weightSum = 0.0;
+		var weightedSum = 0.0;
+		var weightSum = 0.0;
 
 		foreach (var vote in votes)
 		{

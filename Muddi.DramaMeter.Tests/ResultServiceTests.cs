@@ -25,15 +25,13 @@ public class ResultServiceTests
 		db.Users.Add(user);
 		db.SaveChanges();
 
-		foreach (var vote in votes)
-		{
+		foreach (var (level, ageSince) in votes)
 			db.Votes.Add(new Vote
 			{
 				User = user,
-				Level = vote.Level,
-				CreatedAt = DateTime.UtcNow - vote.AgeSince
+				Level = level,
+				CreatedAt = DateTime.UtcNow - ageSince
 			});
-		}
 
 		db.SaveChanges();
 	}
@@ -153,8 +151,7 @@ public class ResultServiceTests
 		db.Users.Add(user);
 		db.SaveChanges();
 
-		for (int i = 0; i < 15; i++)
-		{
+		for (var i = 0; i < 15; i++)
 			db.Votes.Add(new Vote
 			{
 				User = user,
@@ -163,7 +160,6 @@ public class ResultServiceTests
 				ClickViewBoxY = 50 + i * 5,
 				CreatedAt = DateTime.UtcNow.AddMinutes(-i * 10)
 			});
-		}
 
 		await db.SaveChangesAsync();
 

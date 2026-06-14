@@ -15,7 +15,7 @@
             clip-path="url(#half-clip)"/>
 
     @* 4 colored arc segments *@
-    @for (int i = 0; i < 4; i++)
+    @for (var i = 0; i < 4; i++)
     {
         var startAngle = 180 - i * 45.0;
         var endAngle = 180 - (i + 1) * 45.0;
@@ -39,7 +39,7 @@
     }
 
     @* Segment labels — raw HTML since <text> is Razor-reserved *@
-    @for (int i = 0; i < 4; i++)
+    @for (var i = 0; i < 4; i++)
     {
         var midAngle = 180 - (i + 0.5) * 45.0;
         var lx = Cx + LabelR * Math.Cos(midAngle * Math.PI / 180);
@@ -75,11 +75,11 @@
 
     [Parameter] public DramaResult? Result { get; set; }
     [Parameter] public bool ShowNeedle { get; set; }
-    [Parameter] public double DramaLevel { get; set; } = 0;
+    [Parameter] public double DramaLevel { get; set; }
     [EditorRequired] [Parameter] public required List<UserPoint> LastVotePositions { get; set; }
 
     /// <summary>
-    /// Fired when the user clicks on the gauge.
+    ///     Fired when the user clicks on the gauge.
     /// </summary>
     [Parameter]
     public EventCallback<(int level, double angle, double viewBoxX, double viewBoxY)> OnVoteRequested { get; set; }
