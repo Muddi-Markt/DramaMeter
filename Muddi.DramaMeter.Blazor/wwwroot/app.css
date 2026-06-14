@@ -131,6 +131,18 @@ p {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+.made-by {
+    color: rgba(255, 255, 255, 0.6);
+    position: absolute;
+    bottom: 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+}
+
+.made-by a {
+    color: rgba(255, 255, 255, 0.6);
+}
+
 
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
