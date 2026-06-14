@@ -116,6 +116,7 @@ p {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     cursor: pointer;
     transition: all 0.2s ease;
+    z-index: 3;
 }
 
 .delete-btn:hover {
