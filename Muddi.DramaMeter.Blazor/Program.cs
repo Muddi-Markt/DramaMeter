@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Muddi.DramaMeter.Blazor.Components;
 using Muddi.DramaMeter.Blazor.Data;
+using Muddi.DramaMeter.Blazor.Models;
 using Muddi.DramaMeter.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,10 @@ var connectionString = builder.Configuration.GetConnectionString("DramaMeter")
                        ?? throw new InvalidOperationException("Connection string 'DramaMeter' not found.");
 builder.Services.AddDbContext<DramaMeterDbContext>(options =>
 	options.UseNpgsql(connectionString));
+
+// Register configuration
+builder.Services.AddOptions<DramaMeterSettings>()
+	.BindConfiguration("DramaMeter");
 
 // Register backend services
 builder.Services.AddScoped<ISessionService, SessionService>();

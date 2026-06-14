@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Muddi.DramaMeter.Blazor.Data;
 using Muddi.DramaMeter.Blazor.Models;
 
@@ -36,11 +37,20 @@ public interface IVoteService
 	TimeSpan? GetCooldownRemaining(DateTimeOffset? lastVoteTime);
 }
 
-public class VoteService(
-	DramaMeterDbContext dbContext,
-	ISessionService sessionService) : IVoteService
+public class VoteService : IVoteService
 {
-	private static readonly TimeSpan CooldownPeriod = TimeSpan.FromMinutes(10);
+	private readonly DramaMeterDbContext _dbContext;
+	private readonly ISessionService _sessionService;
+	private readonly DramaMeterSettings _settings;
+
+	public VoteService(DramaMeterDbContext dbContext,
+		ISessionService sessionService,
+		IOptions<DramaMeterSettings> settings)
+	{
+		_dbContext = dbContext;
+		_sessionService = sessionService;
+		_settings = settings.Value;
+	}
 
 	public async Task SubmitVoteAsync(int level, double viewBoxX, double viewBoxY,
 		CancellationToken cancellationToken = default)
@@ -56,9 +66,9 @@ public class VoteService(
 			throw new ArgumentOutOfRangeException(nameof(viewBoxX),
 				"Click position must be within the gauge SVG bounds.");
 
-		var user = await sessionService.GetOrCreateUserAsync();
+		var user = await _sessionService.GetOrCreateUserAsync();
 
-		var lastVote = await dbContext.Votes
+		var lastVote = await _dbContext.Votes
 			.Where(v => v.User.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(cancellationToken);
@@ -66,9 +76,9 @@ public class VoteService(
 		if (lastVote is not null)
 		{
 			var elapsed = DateTime.UtcNow - lastVote.CreatedAt;
-			if (elapsed < CooldownPeriod)
+			if (elapsed < _settings.CooldownPeriod)
 				throw new InvalidOperationException(
-					$"You must wait {CooldownPeriod.TotalMinutes} minutes between votes.");
+					$"You must wait {_settings.CooldownPeriod.TotalMinutes} minutes between votes.");
 		}
 
 		var vote = new Vote
@@ -78,20 +88,20 @@ public class VoteService(
 			ClickViewBoxX = viewBoxX,
 			ClickViewBoxY = viewBoxY
 		};
-		dbContext.Votes.Add(vote);
-		await dbContext.SaveChangesAsync(cancellationToken);
+		_dbContext.Votes.Add(vote);
+		await _dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default)
 	{
-		var user = await sessionService.GetOrCreateUserAsync();
+		var user = await _sessionService.GetOrCreateUserAsync();
 		return await DeleteMostRecentVoteAsync(user.Id, cancellationToken);
 	}
 
 	public async Task<Vote?> GetUserLastVoteAsync(CancellationToken cancellationToken = default)
 	{
-		var user = await sessionService.GetOrCreateUserAsync();
-		return await dbContext.Votes
+		var user = await _sessionService.GetOrCreateUserAsync();
+		return await _dbContext.Votes
 			.Where(v => v.User.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(cancellationToken);
@@ -99,38 +109,40 @@ public class VoteService(
 
 	public async Task<bool> DeleteVoteByIdAsync(long voteId, Guid userId, CancellationToken cancellationToken = default)
 	{
-		var vote = await dbContext.Votes
+		var vote = await _dbContext.Votes
 			.Where(v => v.Id == voteId && v.User.Id == userId)
 			.FirstOrDefaultAsync(cancellationToken);
 
 		if (vote is null) return false;
 
-		dbContext.Votes.Remove(vote);
-		await dbContext.SaveChangesAsync(cancellationToken);
+		_dbContext.Votes.Remove(vote);
+		await _dbContext.SaveChangesAsync(cancellationToken);
 		return true;
 	}
 
 	public TimeSpan? GetCooldownRemaining(DateTimeOffset? lastVoteTime)
 	{
-		if (lastVoteTime is null) return null;
+		if (lastVoteTime is null)
+			return null;
 
 		var elapsed = DateTimeOffset.UtcNow - lastVoteTime.Value;
-		if (elapsed >= CooldownPeriod) return null;
+		if (elapsed >= _settings.CooldownPeriod)
+			return null;
 
-		return CooldownPeriod - elapsed;
+		return _settings.CooldownPeriod - elapsed;
 	}
 
 	private async Task<bool> DeleteMostRecentVoteAsync(Guid userId, CancellationToken cancellationToken = default)
 	{
-		var vote = await dbContext.Votes
+		var vote = await _dbContext.Votes
 			.Where(v => v.User.Id == userId)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(cancellationToken);
 
 		if (vote is null) return false;
 
-		dbContext.Votes.Remove(vote);
-		await dbContext.SaveChangesAsync(cancellationToken);
+		_dbContext.Votes.Remove(vote);
+		await _dbContext.SaveChangesAsync(cancellationToken);
 		return true;
 	}
 }

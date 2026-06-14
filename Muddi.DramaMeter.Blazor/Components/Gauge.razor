@@ -1,4 +1,6 @@
+@using Microsoft.Extensions.Options
 @inject IJSRuntime JS
+@inject IOptions<DramaMeterSettings> Settings
 
 <svg @ref="_svgRef" viewBox="0 0 440 320" class="gauge-svg" aria-label="Drama gauge"
      @onclick="OnGaugeClick">
@@ -68,10 +70,9 @@
     private const double NeedleLen = 115;
 
     private static readonly string[] _colors = { "#4caf50", "#fdd835", "#ff9800", "#c62828" };
-    private static readonly string[] _labels = { "No Drama", "Es knistert", "Bodenlos!", "SONDERPLENUM" };
 
     private string[] Colors => _colors;
-    private string[] Labels => _labels;
+    private string[] Labels => Settings.Value.GaugeLabels;
 
     [Parameter] public DramaResult? Result { get; set; }
     [Parameter] public bool ShowNeedle { get; set; }

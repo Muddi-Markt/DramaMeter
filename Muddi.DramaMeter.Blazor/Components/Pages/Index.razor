@@ -3,14 +3,15 @@
 @inject IResultService ResultService
 @inject ILogger<Index> Logger
 @inject IJSRuntime JsRuntime
+@inject IOptions<DramaMeterSettings> Settings
 
-<PageTitle>MUDDI's Drama Meter</PageTitle>
+<PageTitle>@Settings.Value.Title @Settings.Value.Subtitle</PageTitle>
 
 <div class="page">
 
     <div>
-        <h1 class="title">MUDDI's</h1>
-        <h2 class="title">Drama Meter</h2>
+        <h1 class="title">@Settings.Value.Title</h1>
+        <h2 class="title">@Settings.Value.Subtitle</h2>
     </div>
 
     <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
@@ -67,11 +68,12 @@
     {
         _dramaResult = await ResultService.GetDramaResultAsync();
         _dramaLevel = _dramaResult.DramaLevel;
-        _lastVotePositions = _dramaResult.ClickPositions ?? [];
+        _lastVotePositions = _dramaResult.ClickPositions;
 
         var lastVote = await VoteService.GetUserLastVoteAsync();
-        _hasVoted = lastVote != null;
+
         _cooldownRemaining = VoteService.GetCooldownRemaining(lastVote?.CreatedAt);
+        _hasVoted = _cooldownRemaining.HasValue;
     }
 
     private async Task HandleGaugeVote((int level, double angle, double viewBoxX, double viewBoxY) args)
@@ -80,15 +82,13 @@
         {
             await VoteService.SubmitVoteAsync(args.level, args.viewBoxX, args.viewBoxY);
         }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            Logger.LogInformation("Click was not updated: {ErrorMessage}", ex.Message);
+            await JsRuntime.InvokeVoidAsync("console.log", "Failed to update click: " + ex.Message);
+        }
         catch (Exception ex)
         {
-            if (ex is ArgumentException or InvalidOperationException)
-            {
-                Logger.LogInformation("Click was not updated: {ErrorMessage}", ex.Message);
-                await JsRuntime.InvokeVoidAsync("console.log", "Failed to update click: " + ex.Message);
-                return;
-            }
-
             Logger.LogError(ex, "Failed to update click");
             await JsRuntime.InvokeVoidAsync("console.error", "Failed to update click: " + ex.Message);
         }
@@ -104,6 +104,7 @@
 
     private async Task OnCooldownElapsed()
     {
+        _cooldownRemaining = null;
         await LoadAsync();
     }
 
