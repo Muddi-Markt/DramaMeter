@@ -54,6 +54,7 @@ using var scope = app.Services.CreateScope();
 }
 
 app.MapStaticAssets();
+app.UseMiddleware<SessionCreationMiddleware>();
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode();
 

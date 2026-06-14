@@ -45,7 +45,7 @@ public class SessionService(
 				user = new User();
 				dbContext.Users.Add(user);
 				await dbContext.SaveChangesAsync();
-				SetSessionCookie(user.Id);
+				// Session cookie is set by SessionCreationMiddleware on the initial GET
 			}
 
 			_cachedUser = user;
@@ -60,19 +60,5 @@ public class SessionService(
 	private string? GetSessionCookie()
 	{
 		return httpContextAccessor.HttpContext?.Request.Cookies[CookieName];
-	}
-
-	private void SetSessionCookie(Guid userId)
-	{
-		var cookieOptions = new CookieOptions
-		{
-			HttpOnly = true,
-			SameSite = SameSiteMode.Lax,
-			Expires = DateTime.UtcNow.AddDays(CookieDays),
-			Path = "/"
-		};
-
-		var context = httpContextAccessor.HttpContext;
-		if (context is not null) context.Response.Cookies.Append(CookieName, userId.ToString(), cookieOptions);
 	}
 }
