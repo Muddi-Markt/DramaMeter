@@ -1,4 +1,5 @@
 @implements IAsyncDisposable
+@inject IVoteService VoteService
 
 @if (_remaining > TimeSpan.Zero)
 {
@@ -11,27 +12,27 @@
 }
 
 @code {
-    [Parameter] public TimeSpan Remaining { get; set; }
+    [Parameter] public DateTimeOffset CooldownAt { get; set; }
     [Parameter] public EventCallback OnElapsed { get; set; }
+
+    private DateTimeOffset _oldCooldownAt;
 
     private TimeSpan _remaining;
     private Timer? _timer;
     private bool _disposed;
 
-    protected override void OnInitialized()
-    {
-        _remaining = Remaining;
-        StartTimer();
-    }
-
     protected override void OnParametersSet()
     {
-        if (!(_remaining == Remaining && _remaining > TimeSpan.Zero))
-        {
-            _remaining = Remaining;
-            StopTimer();
-            StartTimer();
-        }
+        if (_oldCooldownAt == CooldownAt)
+            return;
+        _oldCooldownAt = CooldownAt;
+        var remaining = VoteService.GetCooldownRemaining(CooldownAt);
+        
+        if (!remaining.HasValue)
+            return;
+        _remaining = remaining.Value;
+        StopTimer();
+        StartTimer();
     }
 
     private void StartTimer()

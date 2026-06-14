@@ -26,6 +26,13 @@
     }
 
     @* Animated needle *@
+    
+    
+    @* Last 100 vote dots — rendered directly inside this SVG *@
+    @if (ShowResults)
+    {
+        <LastVotes Positions="@LastVotePositions"/>
+    }
 
     <g class="needle" style="transform: rotate(@(NeedleAngle)deg)" opacity="@(ShowResults ? 1 : 0)">
         <line x1="@Cx" y1="@Cy" x2="@Cx" y2="@NeedleTipY"
@@ -33,11 +40,6 @@
         <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
     </g>
 
-    @* Last 100 vote dots — rendered directly inside this SVG *@
-    @if (ShowResults)
-    {
-        <LastVotes Positions="@LastVotePositions"/>
-    }
 
 
     @* Segment labels — raw HTML since <text> is Razor-reserved *@
