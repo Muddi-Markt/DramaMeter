@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.EntityFrameworkCore;
 using Muddi.DramaMeter.Blazor.Components;
 using Muddi.DramaMeter.Blazor.Data;
@@ -27,6 +28,7 @@ builder.Services.AddOptions<DramaMeterSettings>()
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IResultService, ResultService>();
+builder.Services.AddSingleton<BroadcastService>();
 
 var app = builder.Build();
 

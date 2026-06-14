@@ -28,7 +28,8 @@ public class VoteServiceTests
 		var sess = sessionService ?? Substitute.For<ISessionService>();
 		sess.GetOrCreateUserAsync().Returns(user);
 		var settings = Options.Create(GetSettings(cooldownMinutes));
-		return new VoteService(factory, sess, settings);
+		var broadcast = Substitute.For<BroadcastService>();
+		return new VoteService(factory, sess, settings, broadcast);
 	}
 
 	private UserPoint CreateVotePoint(User user, int level, double x, double y) => new(user.Id, x, y, 1.0, level);

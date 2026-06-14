@@ -4,6 +4,8 @@
 @inject ILogger<Index> Logger
 @inject IJSRuntime JsRuntime
 @inject IOptions<DramaMeterSettings> Settings
+@inject BroadcastService Broadcast
+@implements IDisposable
 
 <PageTitle>@Settings.Value.Title @Settings.Value.Subtitle</PageTitle>
 
@@ -58,9 +60,18 @@
     private bool _hasVoted;
     private double _dramaLevel;
     private List<UserPoint> _lastVotePositions = [];
+    private BroadcastService.Registration? _registration;
 
     protected override async Task OnInitializedAsync()
     {
+        _registration = Broadcast.Register(async () =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        });
         await LoadAsync();
     }
 
@@ -75,8 +86,8 @@
         var cooldownRemaining = VoteService.GetCooldownRemaining(_lastVote?.CreatedAt);
         _hasVoted = cooldownRemaining.HasValue;
 #if DEBUG
-        if (_dramaResult.TotalVoteCount == 0)
-            await ((ResultService)ResultService).CreateDummies();
+        // if (_dramaResult.TotalVoteCount == 0)
+        // await ((ResultService)ResultService).CreateDummies();
 #endif
     }
 
@@ -109,6 +120,11 @@
     private async Task OnCooldownElapsed()
     {
         await LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        _registration?.Dispose();
     }
 
 }

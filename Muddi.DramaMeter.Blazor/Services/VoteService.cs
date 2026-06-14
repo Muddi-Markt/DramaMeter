@@ -42,14 +42,17 @@ public class VoteService : IVoteService
 	private readonly IDbContextFactory<DramaMeterDbContext> _contextFactory;
 	private readonly ISessionService _sessionService;
 	private readonly DramaMeterSettings _settings;
+	private readonly BroadcastService _broadcast;
 
 	public VoteService(IDbContextFactory<DramaMeterDbContext> contextFactory,
 		ISessionService sessionService,
-		IOptions<DramaMeterSettings> settings)
+		IOptions<DramaMeterSettings> settings,
+		BroadcastService broadcast)
 	{
 		_contextFactory = contextFactory;
 		_sessionService = sessionService;
 		_settings = settings.Value;
+		_broadcast = broadcast;
 	}
 
 	public async Task SubmitVoteAsync(UserPoint userPoint,
@@ -93,6 +96,7 @@ public class VoteService : IVoteService
 		};
 		dbContext.Votes.Add(vote);
 		await dbContext.SaveChangesAsync(ct);
+		await _broadcast.NotifyVoteChangedAsync();
 	}
 
 	public async Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default)
@@ -122,6 +126,7 @@ public class VoteService : IVoteService
 
 		dbContext.Votes.Remove(vote);
 		await dbContext.SaveChangesAsync(cancellationToken);
+		await _broadcast.NotifyVoteChangedAsync();
 		return true;
 	}
 
@@ -149,6 +154,7 @@ public class VoteService : IVoteService
 
 		dbContext.Votes.Remove(vote);
 		await dbContext.SaveChangesAsync(cancellationToken);
+		await _broadcast.NotifyVoteChangedAsync();
 		return true;
 	}
 }

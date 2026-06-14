@@ -19,12 +19,19 @@ public class SessionService(
 	private const string CookieName = "drama_meter_session";
 	private const int CookieDays = 365;
 	private readonly SemaphoreSlim _semaphore = new(1, 1);
+	private User? _cachedUser;
 
 	public async Task<User> GetOrCreateUserAsync()
 	{
+		if (_cachedUser is not null) 
+			return _cachedUser;
+
 		await _semaphore.WaitAsync();
 		try
 		{
+			if (_cachedUser is not null) 
+				return _cachedUser;
+
 			var userId = GetSessionCookie();
 
 			await using var dbContext = await contextFactory.CreateDbContextAsync();
@@ -33,15 +40,15 @@ public class SessionService(
 			if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var guid))
 				user = await dbContext.Users.FindAsync(guid);
 
-			if (user is not null)
-				return user;
+			if (user is null)
+			{
+				user = new User();
+				dbContext.Users.Add(user);
+				await dbContext.SaveChangesAsync();
+				SetSessionCookie(user.Id);
+			}
 
-			user = new User();
-			dbContext.Users.Add(user);
-			await dbContext.SaveChangesAsync();
-
-			SetSessionCookie(user.Id);
-
+			_cachedUser = user;
 			return user;
 		}
 		finally
