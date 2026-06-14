@@ -107,7 +107,7 @@ public class ResultService(IDbContextFactory<DramaMeterDbContext> contextFactory
 
 	public async Task CreateDummies()
 	{
-		await using var dbContext = contextFactory.CreateDbContext();
+		await using var dbContext = await contextFactory.CreateDbContextAsync();
 		var user = dbContext.Users.FirstOrDefault();
 		if (user is null)
 			return;
@@ -118,7 +118,7 @@ public class ResultService(IDbContextFactory<DramaMeterDbContext> contextFactory
 			{
 				User = user,
 				Level = Random.Shared.Next(0, 4),
-				ClickViewBoxX = Math.Round(Random.Shared.NextDouble() * 180.0),
+				ClickViewBoxX = Math.Round(Random.Shared.NextDouble() * 440.0),
 				ClickViewBoxY = Math.Round(Random.Shared.NextDouble() * 180.0),
 				CreatedAt = DateTime.UtcNow.AddMinutes((100 - i) * -100)
 			});
