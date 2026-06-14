@@ -26,18 +26,19 @@
     }
 
     @* Animated needle *@
-    @if (ShowNeedle)
+
+    <g class="needle" style="transform: rotate(@(NeedleAngle)deg)" opacity="@(ShowResults ? 1 : 0)">
+        <line x1="@Cx" y1="@Cy" x2="@Cx" y2="@NeedleTipY"
+              stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    </g>
+
+    @* Last 100 vote dots — rendered directly inside this SVG *@
+    @if (ShowResults)
     {
-        <g class="needle" style="transform: rotate(@(NeedleAngle)deg)">
-            <line x1="@Cx" y1="@Cy" x2="@Cx" y2="@NeedleTipY"
-                  stroke="white" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="@Cx" cy="@Cy" r="7" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
-        </g>
-
-        @* Last 100 vote dots — rendered directly inside this SVG *@
-
         <LastVotes Positions="@LastVotePositions"/>
     }
+
 
     @* Segment labels — raw HTML since <text> is Razor-reserved *@
     @for (var i = 0; i < 4; i++)
@@ -74,7 +75,7 @@
     private string[] Labels => Settings.Value.GaugeLabels;
 
     [Parameter] public DramaResult? Result { get; set; }
-    [Parameter] public bool ShowNeedle { get; set; }
+    [Parameter] public bool ShowResults { get; set; }
     [Parameter] public double DramaLevel { get; set; }
     [EditorRequired] [Parameter] public required List<UserPoint> LastVotePositions { get; set; }
 
@@ -84,7 +85,7 @@
     [Parameter]
     public EventCallback<UserPoint> OnVoteRequested { get; set; }
 
-    private double NeedleAngle => DramaLevel * 60.0 - 90.0;
+    private double NeedleAngle => !ShowResults ? -90.0 : DramaLevel * 60.0 - 90.0;
     private double NeedleTipY => Cy - NeedleLen;
 
 
@@ -94,6 +95,11 @@
         {
             await GetCurrentScaleAsync();
         }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
     }
 
     private async Task GetCurrentScaleAsync()

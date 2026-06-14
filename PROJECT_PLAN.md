@@ -271,12 +271,10 @@ DramaMeter/
 19. [x] **Styling**: Red background, white text, responsive design
 
 ### Phase 6: Polish
-20. [ ] **Animations**: Needle flies to position, fade-in effects
-21. [ ] **Drama drift**: Implement exponential decay calculation
-22. [ ] **Delete vote flow**: Confirmation dialog + UI update
-23. [ ] **Error handling**: Network failures, DB errors
-24. [ ] **Docker testing**: Build & run via docker-compose
-25. [ ] **Final review & bug fixes**
+20. [x] **Animations**: Needle flies to position, fade-in effects
+21. [x] **Drama drift**: Implement exponential decay calculation
+22. [ ] **Error handling**: Network failures, DB errors
+23. [ ] **Final review & bug fixes**
 
 ---
 
