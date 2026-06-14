@@ -2,6 +2,8 @@
     width: 100%;
     max-width: 440px;
     height: auto;
+    position: relative;
+    z-index: 2;
 }
 
 .gauge-segment {
@@ -28,5 +30,5 @@
 .needle {
     transform-origin: 220px 180px;
     transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
 }
