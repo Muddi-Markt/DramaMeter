@@ -39,15 +39,15 @@ public interface IVoteService
 
 public class VoteService : IVoteService
 {
-	private readonly DramaMeterDbContext _dbContext;
+	private readonly IDbContextFactory<DramaMeterDbContext> _contextFactory;
 	private readonly ISessionService _sessionService;
 	private readonly DramaMeterSettings _settings;
 
-	public VoteService(DramaMeterDbContext dbContext,
+	public VoteService(IDbContextFactory<DramaMeterDbContext> contextFactory,
 		ISessionService sessionService,
 		IOptions<DramaMeterSettings> settings)
 	{
-		_dbContext = dbContext;
+		_contextFactory = contextFactory;
 		_sessionService = sessionService;
 		_settings = settings.Value;
 	}
@@ -66,11 +66,12 @@ public class VoteService : IVoteService
 			throw new ArgumentOutOfRangeException(nameof(userPoint),
 				"Click position must be within the gauge SVG bounds.");
 
-		var user = await _dbContext.Users.FindAsync([userPoint.UserId], ct);
+		await using var dbContext = await _contextFactory.CreateDbContextAsync(ct);
+		var user = await dbContext.Users.FindAsync([userPoint.UserId], ct);
 		if (user is null)
 			throw new KeyNotFoundException("User not found: " + userPoint.UserId);
 
-		var lastVote = await _dbContext.Votes
+		var lastVote = await dbContext.Votes
 			.Where(v => v.User.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(ct);
@@ -90,8 +91,8 @@ public class VoteService : IVoteService
 			ClickViewBoxX = userPoint.X,
 			ClickViewBoxY = userPoint.Y
 		};
-		_dbContext.Votes.Add(vote);
-		await _dbContext.SaveChangesAsync(ct);
+		dbContext.Votes.Add(vote);
+		await dbContext.SaveChangesAsync(ct);
 	}
 
 	public async Task<bool> DeleteMostRecentVoteAsync(CancellationToken cancellationToken = default)
@@ -103,7 +104,8 @@ public class VoteService : IVoteService
 	public async Task<Vote?> GetUserLastVoteAsync(CancellationToken cancellationToken = default)
 	{
 		var user = await _sessionService.GetOrCreateUserAsync();
-		return await _dbContext.Votes
+		await using var dbContext = await _contextFactory.CreateDbContextAsync(cancellationToken);
+		return await dbContext.Votes
 			.Where(v => v.User.Id == user.Id)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(cancellationToken);
@@ -111,14 +113,15 @@ public class VoteService : IVoteService
 
 	public async Task<bool> DeleteVoteByIdAsync(long voteId, Guid userId, CancellationToken cancellationToken = default)
 	{
-		var vote = await _dbContext.Votes
+		await using var dbContext = await _contextFactory.CreateDbContextAsync(cancellationToken);
+		var vote = await dbContext.Votes
 			.Where(v => v.Id == voteId && v.User.Id == userId)
 			.FirstOrDefaultAsync(cancellationToken);
 
 		if (vote is null) return false;
 
-		_dbContext.Votes.Remove(vote);
-		await _dbContext.SaveChangesAsync(cancellationToken);
+		dbContext.Votes.Remove(vote);
+		await dbContext.SaveChangesAsync(cancellationToken);
 		return true;
 	}
 
@@ -136,15 +139,16 @@ public class VoteService : IVoteService
 
 	private async Task<bool> DeleteMostRecentVoteAsync(Guid userId, CancellationToken cancellationToken = default)
 	{
-		var vote = await _dbContext.Votes
+		await using var dbContext = await _contextFactory.CreateDbContextAsync(cancellationToken);
+		var vote = await dbContext.Votes
 			.Where(v => v.User.Id == userId)
 			.OrderByDescending(v => v.CreatedAt)
 			.FirstOrDefaultAsync(cancellationToken);
 
 		if (vote is null) return false;
 
-		_dbContext.Votes.Remove(vote);
-		await _dbContext.SaveChangesAsync(cancellationToken);
+		dbContext.Votes.Remove(vote);
+		await dbContext.SaveChangesAsync(cancellationToken);
 		return true;
 	}
 }

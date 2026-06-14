@@ -35,7 +35,7 @@ public interface IResultService
 	Task<DramaResult> GetDramaResultAsync(CancellationToken cancellationToken = default);
 }
 
-public class ResultService(DramaMeterDbContext dbContext) : IResultService
+public class ResultService(IDbContextFactory<DramaMeterDbContext> contextFactory) : IResultService
 {
 	/// <summary>
 	///     Decay rate: after 3 days, weight drops to ~5%.
@@ -50,6 +50,7 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
 
 	public async Task<DramaResult> GetDramaResultAsync(CancellationToken cancellationToken = default)
 	{
+		await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
 		var now = DateTime.UtcNow;
 
 		// Load votes that are still relevant (within 7 days)
@@ -106,6 +107,7 @@ public class ResultService(DramaMeterDbContext dbContext) : IResultService
 
 	public async Task CreateDummies()
 	{
+		await using var dbContext = contextFactory.CreateDbContext();
 		var user = dbContext.Users.FirstOrDefault();
 		if (user is null)
 			return;

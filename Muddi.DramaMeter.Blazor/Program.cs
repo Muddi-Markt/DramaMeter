@@ -13,10 +13,10 @@ builder.Services.AddRazorComponents()
 // Register HttpContextAccessor (needed for cookie access in services)
 builder.Services.AddHttpContextAccessor();
 
-// Register DbContext with PostgreSQL
+// Register DbContext factory with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DramaMeter")
                        ?? throw new InvalidOperationException("Connection string 'DramaMeter' not found.");
-builder.Services.AddDbContext<DramaMeterDbContext>(options =>
+builder.Services.AddDbContextFactory<DramaMeterDbContext>(options =>
 	options.UseNpgsql(connectionString));
 
 // Register configuration
@@ -44,10 +44,11 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 // Apply pending migrations on startup
-using (var scope = app.Services.CreateScope())
+using var scope = app.Services.CreateScope();
 {
-	var db = scope.ServiceProvider.GetRequiredService<DramaMeterDbContext>();
-	db.Database.Migrate();
+	var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<DramaMeterDbContext>>();
+	await using var db = factory.CreateDbContext();
+	await db.Database.MigrateAsync();
 }
 
 app.MapStaticAssets();

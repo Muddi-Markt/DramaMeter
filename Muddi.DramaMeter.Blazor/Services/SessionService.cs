@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Muddi.DramaMeter.Blazor.Data;
 using Muddi.DramaMeter.Blazor.Models;
 
@@ -11,7 +12,9 @@ public interface ISessionService
 	Task<User> GetOrCreateUserAsync();
 }
 
-public class SessionService(IHttpContextAccessor httpContextAccessor, DramaMeterDbContext dbContext) : ISessionService
+public class SessionService(
+	IHttpContextAccessor httpContextAccessor,
+	IDbContextFactory<DramaMeterDbContext> contextFactory) : ISessionService
 {
 	private const string CookieName = "drama_meter_session";
 	private const int CookieDays = 365;
@@ -23,6 +26,8 @@ public class SessionService(IHttpContextAccessor httpContextAccessor, DramaMeter
 		try
 		{
 			var userId = GetSessionCookie();
+
+			await using var dbContext = await contextFactory.CreateDbContextAsync();
 
 			User? user = null;
 			if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var guid))
