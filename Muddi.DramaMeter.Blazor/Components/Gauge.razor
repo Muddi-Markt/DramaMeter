@@ -26,8 +26,8 @@
     }
 
     @* Animated needle *@
-    
-    
+
+
     @* Last 100 vote dots — rendered directly inside this SVG *@
     @if (ShowResults)
     {
@@ -49,7 +49,7 @@
         var lx = Cx + LabelR * Math.Cos(midAngle * Math.PI / 180);
         var ly = Cy - LabelR * Math.Sin(midAngle * Math.PI / 180);
         <text> @* dobule text is needed for blazor *@
-            <text x="@lx" y="@ly" text-anchor="middle" dominant-baseline="middle"
+            <text x="@(lx + ((2 - (i + 0.5)) * 25))" y="@(ly + 5)" text-anchor="middle" dominant-baseline="middle"
                   class="gauge-label@(i == CurrentLevelIndex ? " gauge-label--active" : "")">
                 @Labels[i]
             </text>
@@ -99,7 +99,7 @@
             await GetCurrentScaleAsync();
         }
     }
-    
+
     private async Task GetCurrentScaleAsync()
     {
         // Get SVG display dimensions and element position once
