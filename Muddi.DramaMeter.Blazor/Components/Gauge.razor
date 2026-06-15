@@ -87,7 +87,7 @@
     [Parameter]
     public EventCallback<UserPoint> OnVoteRequested { get; set; }
 
-    private double NeedleAngle => !ShowResults ? -90.0 : DramaLevel * 60.0 - 90.0;
+    private double NeedleAngle => !ShowResults ? -90.0 : DramaLevel * 45.0 - 67.5;
     private double NeedleTipY => Cy - NeedleLen;
     private int CurrentLevelIndex => !ShowResults ? -1 : Math.Min(3, (int)Math.Round(DramaLevel));
 
