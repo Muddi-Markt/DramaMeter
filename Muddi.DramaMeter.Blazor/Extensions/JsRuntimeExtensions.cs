@@ -15,8 +15,5 @@ public static class JsRuntimeExtensions
 		{
 			return jsRuntime.InvokeVoidAsync("console.error", message);
 		}
-
-		public ValueTask LogErrorAsync(Exception ex, string message)
-			=> jsRuntime.LogErrorAsync($"{ex.Message}\n\n{message}");
 	}
 }

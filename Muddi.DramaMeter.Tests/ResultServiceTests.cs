@@ -50,7 +50,7 @@ public class ResultServiceTests
 
 		// Assert
 		result.DramaLevel.Should().Be(0.0);
-		result.TotalVoteCount.Should().Be(0);
+		result.EwmaVoteCount.Should().Be(0);
 	}
 
 	[Fact]
@@ -101,7 +101,7 @@ public class ResultServiceTests
 
 		// Assert - fresh votes (0 and 3) should have weight ~1, so average should be ~1.5
 		result.DramaLevel.Should().BeApproximately(1.5, 0.1);
-		result.TotalVoteCount.Should().Be(4);
+		result.EwmaVoteCount.Should().Be(4);
 	}
 
 	[Fact]

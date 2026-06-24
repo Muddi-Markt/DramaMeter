@@ -11,7 +11,7 @@
 <PageTitle>@Settings.Value.Title @Settings.Value.Subtitle</PageTitle>
 
 <div class="page">
-    
+
     <!-- Gauge with animated needle, last-vote dots, and click-to-vote -->
     <div class="gauge-container">
         <Gauge DramaLevel="@_dramaLevel"
@@ -46,10 +46,10 @@
         }
 
         <!-- Total votes cast -->
-        @if (_dramaResult?.TotalVoteCount > 0)
+        @if (_dramaResult?.EwmaVoteCount > 0)
         {
             <span class="vote-count">
-                @_dramaResult.TotalVoteCount vote@(_dramaResult.TotalVoteCount == 1 ? "" : "s")
+                @_dramaResult.EwmaVoteCount / @_dramaResult.TotalVolteCount vote@(_dramaResult.EwmaVoteCount == 1 ? "" : "s")
             </span>
         }
     </footer>
@@ -93,7 +93,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load drama result");
-            await JsRuntime.LogErrorAsync(ex, "Failed to load drama result");
+            await JsRuntime.LogErrorAsync("Failed to load drama result");
         }
 #if DEBUG
         // if (_dramaResult.TotalVoteCount == 0)
@@ -115,7 +115,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to update click");
-            await JsRuntime.LogErrorAsync(ex, "Failed to update click");
+            await JsRuntime.LogErrorAsync("Failed to update click");
         }
 
         await LoadAsync();
@@ -130,7 +130,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to delete vote");
-            await JsRuntime.LogErrorAsync(ex, "Failed to delete vote");
+            await JsRuntime.LogErrorAsync("Failed to delete vote");
         }
 
         await LoadAsync();
@@ -145,4 +145,5 @@
     {
         _registration?.Dispose();
     }
+
 }
