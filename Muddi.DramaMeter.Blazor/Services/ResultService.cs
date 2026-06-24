@@ -17,7 +17,12 @@ public class DramaResult
 	/// <summary>
 	///     The number of votes included in the EWMA calculation (votes within the last 7 days).
 	/// </summary>
-	public int TotalVoteCount { get; set; }
+	public int EwmaVoteCount { get; set; }
+
+	/// <summary>
+	/// Total vote count in database
+	/// </summary>
+	public int TotalVolteCount { get; set; }
 
 	/// <summary>
 	///     The actual click positions (viewBox coords) of the last 10 votes, ordered by most recent first.
@@ -59,10 +64,13 @@ public class ResultService(IDbContextFactory<DramaMeterDbContext> contextFactory
 			.Where(v => v.CreatedAt > cutoff)
 			.OrderByDescending(v => v.CreatedAt)
 			.ToListAsync(cancellationToken);
+		
+		var totalCounts = await dbContext.Votes.CountAsync(cancellationToken);
 
 		var dramaResult = new DramaResult
 		{
-			TotalVoteCount = votes.Count
+			EwmaVoteCount = votes.Count,
+			TotalVolteCount = totalCounts
 		};
 
 
