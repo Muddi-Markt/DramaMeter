@@ -5,6 +5,7 @@
 @inject IJSRuntime JsRuntime
 @inject IOptions<DramaMeterSettings> Settings
 @inject BroadcastService Broadcast
+@using Muddi.DramaMeter.Blazor.Extensions
 @implements IDisposable
 
 <PageTitle>@Settings.Value.Title @Settings.Value.Subtitle</PageTitle>
@@ -78,14 +79,22 @@
 
     private async Task LoadAsync()
     {
-        _dramaResult = await ResultService.GetDramaResultAsync();
-        _dramaLevel = _dramaResult.DramaLevel;
-        _lastVotePositions = _dramaResult.ClickPositions;
+        try
+        {
+            _dramaResult = await ResultService.GetDramaResultAsync();
+            _dramaLevel = _dramaResult.DramaLevel;
+            _lastVotePositions = _dramaResult.ClickPositions;
 
-        _lastVote = await VoteService.GetUserLastVoteAsync();
+            _lastVote = await VoteService.GetUserLastVoteAsync();
 
-        var cooldownRemaining = VoteService.GetCooldownRemaining(_lastVote?.CreatedAt);
-        _hasVoted = cooldownRemaining.HasValue;
+            var cooldownRemaining = VoteService.GetCooldownRemaining(_lastVote?.CreatedAt);
+            _hasVoted = cooldownRemaining.HasValue;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load drama result");
+            await JsRuntime.LogErrorAsync(ex, "Failed to load drama result");
+        }
 #if DEBUG
         // if (_dramaResult.TotalVoteCount == 0)
         // await ((ResultService)ResultService).CreateDummies();
@@ -101,12 +110,12 @@
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             Logger.LogInformation("Click was not updated: {ErrorMessage}", ex.Message);
-            await JsRuntime.InvokeVoidAsync("console.log", "Failed to update click: " + ex.Message);
+            await JsRuntime.LogInformationAsync($"Click was not updated: {ex.Message}");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to update click");
-            await JsRuntime.InvokeVoidAsync("console.error", "Failed to update click: " + ex.Message);
+            await JsRuntime.LogErrorAsync(ex, "Failed to update click");
         }
 
         await LoadAsync();
@@ -114,7 +123,16 @@
 
     private async Task DeleteVote()
     {
-        await VoteService.DeleteMostRecentVoteAsync();
+        try
+        {
+            await VoteService.DeleteMostRecentVoteAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete vote");
+            await JsRuntime.LogErrorAsync(ex, "Failed to delete vote");
+        }
+
         await LoadAsync();
     }
 

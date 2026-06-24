@@ -62,8 +62,6 @@ public class VoteService : IVoteService
 		if (userPoint.Level is < 0 or > 3)
 			throw new ArgumentOutOfRangeException(nameof(userPoint), "Level must be between 0 and 3.");
 
-		// Validate click angle
-
 		// Validate viewBox coordinates
 		if (userPoint.X is < 0 or > 440 || userPoint.Y is < 0 or > 180)
 			throw new ArgumentOutOfRangeException(nameof(userPoint),
@@ -84,7 +82,7 @@ public class VoteService : IVoteService
 			var elapsed = DateTime.UtcNow - lastVote.CreatedAt;
 			if (elapsed < _settings.CooldownPeriod)
 				throw new InvalidOperationException(
-					$"You must wait {_settings.CooldownPeriod.TotalMinutes} minutes between votes.");
+					$"Du musst {_settings.CooldownPeriod.TotalMinutes} Minuten warten.");
 		}
 
 		var vote = new Vote
